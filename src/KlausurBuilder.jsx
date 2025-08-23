@@ -456,50 +456,51 @@ export default function KlausurBuilder() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+              <div className="flex items-center gap-3 justify-center sm:justify-start">
                 <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white">
-                  <Sparkles className="h-6 w-6" />
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Klausur Builder</h1>
-                  <p className="text-sm text-gray-600">Erstelle interaktive Lerninhalte</p>
+                <div className="text-center sm:text-left">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Klausur Builder</h1>
+                  <p className="text-xs sm:text-sm text-gray-600">Erstelle interaktive Lerninhalte</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
-                  <Target className="h-4 w-4" />
+              <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm justify-center sm:justify-start">
+                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
+                  <Target className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{questions.length} Elemente</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full">
-                  <Clock className="h-4 w-4" />
+                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full">
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Draft</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-end">
               <button
                 onClick={handleOpenSettings}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all text-xs sm:text-sm"
               >
-                <Settings className="h-4 w-4" />
-                Settings
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Settings</span>
               </button>
               <button
                 onClick={exportExam}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all text-xs sm:text-sm"
               >
-                <Download className="h-4 w-4" />
-                Export
+                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Export</span>
               </button>
               <button
                 onClick={saveExam}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium shadow-lg hover:shadow-xl"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium shadow-lg hover:shadow-xl text-xs sm:text-sm"
               >
-                <Save className="h-4 w-4" />
-                Speichern
+                <Save className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Speichern</span>
+                <span className="sm:hidden">Save</span>
               </button>
             </div>
           </div>
@@ -507,29 +508,29 @@ export default function KlausurBuilder() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
         {/* Titel + Beschreibung */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
-          <div className="space-y-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="space-y-3 sm:space-y-4">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Titel der Klausur..."
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-xl font-semibold placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="w-full rounded-xl border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-lg sm:text-xl font-semibold placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-center sm:text-left"
             />
             <textarea
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               placeholder="Beschreibung der Klausur..."
               rows={3}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+              className="w-full rounded-xl border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none text-center sm:text-left"
             />
           </div>
         </div>
 
         {/* Fragen */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <AnimatePresence>
           {questions.map((q, idx) => {
             const TypeIcon =
@@ -540,12 +541,12 @@ export default function KlausurBuilder() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="rounded-xl bg-white shadow p-5 space-y-3 relative"
+                className="rounded-xl bg-white shadow p-4 sm:p-5 space-y-3 relative"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-5 w-5 text-gray-400 cursor-move" />
-                    <h3 className="font-semibold text-gray-700">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <GripVertical className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 cursor-move" />
+                    <h3 className="font-semibold text-gray-700 text-sm sm:text-base text-center sm:text-left">
                       {ELEMENT_TYPES.find(t => t.value === q.type) ? 
                         `Element ${idx + 1} (${ELEMENT_TYPES.find(t => t.value === q.type)?.label})` :
                         `Frage ${idx + 1} (${QUESTION_TYPES.find(t => t.value === q.type)?.label || q.type})`
@@ -926,23 +927,23 @@ export default function KlausurBuilder() {
 
       {/* Settings Modal mit Sidebar + X */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-5xl h-[80vh] flex relative">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl sm:max-w-5xl h-[90vh] sm:h-[80vh] flex flex-col sm:flex-row relative">
             {/* Close */}
             <button
               onClick={() => setShowSettings(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-2 sm:top-4 right-2 sm:right-4 text-gray-400 hover:text-gray-600 z-10"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
 
             {/* Sidebar */}
-            <div className="w-48 border-r bg-gray-50 p-4 space-y-2">
+            <div className="w-full sm:w-48 border-b sm:border-b-0 sm:border-r bg-gray-50 p-3 sm:p-4 space-y-1 sm:space-y-2 flex sm:flex-col overflow-x-auto sm:overflow-x-visible">
               {["settings", "intro", "files"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`w-full text-left px-3 py-2 rounded-lg ${
+                  className={`whitespace-nowrap text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm ${
                     activeTab === tab
                       ? "bg-indigo-100 text-indigo-700 font-medium"
                       : "text-gray-700 hover:bg-gray-100"
@@ -958,10 +959,10 @@ export default function KlausurBuilder() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
               {activeTab === "intro" && (
                 <div>
-                  <h3 className="font-medium mb-4">Einleitungstext</h3>
+                  <h3 className="font-medium mb-3 sm:mb-4 text-center sm:text-left">Einleitungstext</h3>
                   <RichTextEditor
                     value={introText}
                     onChange={setIntroText}
@@ -972,10 +973,10 @@ export default function KlausurBuilder() {
 
               {activeTab === "files" && (
                 <div>
-                  <h3 className="font-medium mb-2">Dateien hochladen</h3>
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 cursor-pointer hover:border-indigo-400">
-                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                    <span className="text-gray-500">
+                  <h3 className="font-medium mb-2 text-center sm:text-left">Dateien hochladen</h3>
+                  <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4 sm:p-6 cursor-pointer hover:border-indigo-400">
+                    <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 mb-2" />
+                    <span className="text-gray-500 text-sm sm:text-base text-center">
                       Dateien hier ablegen oder klicken
                     </span>
                     <input
@@ -992,12 +993,12 @@ export default function KlausurBuilder() {
                         key={idx}
                         className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg"
                       >
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 truncate flex-1">
                           {file.name}
                         </span>
                         <button
                           onClick={() => removeFile(idx)}
-                          className="text-red-500 text-sm hover:underline"
+                          className="text-red-500 text-sm hover:underline ml-2 flex-shrink-0"
                         >
                           Entfernen
                         </button>
@@ -1008,14 +1009,14 @@ export default function KlausurBuilder() {
               )}
 
               {activeTab === "settings" && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Kollektionen */}
                   <div>
-                    <h3 className="font-medium mb-3">Kollektion</h3>
+                    <h3 className="font-medium mb-3 text-center sm:text-left">Kollektion</h3>
                     <div className="space-y-3">
                       {/* Bestehende Kollektionen */}
                       <div className="space-y-2">
-                        <label className="text-sm text-gray-600">Kollektion auswählen:</label>
+                        <label className="text-sm text-gray-600 text-center sm:text-left block">Kollektion auswählen:</label>
                         <select
                           value={selectedCollection?.id || ""}
                           onChange={(e) => {
@@ -1038,13 +1039,13 @@ export default function KlausurBuilder() {
                         {!showNewCollectionInput ? (
                           <button
                             onClick={() => setShowNewCollectionInput(true)}
-                            className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                            className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1 justify-center sm:justify-start"
                           >
                             <PlusCircle className="h-4 w-4" />
                             Neue Kollektion erstellen
                           </button>
                         ) : (
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <input
                               type="text"
                               value={newCollectionName}
@@ -1076,14 +1077,14 @@ export default function KlausurBuilder() {
 
                   {/* Tags */}
                   <div>
-                    <h3 className="font-medium mb-3">Tags</h3>
+                    <h3 className="font-medium mb-3 text-center sm:text-left">Tags</h3>
                     <div className="space-y-3">
                       {/* Bestehende Tags */}
                       <div className="space-y-2">
-                        <label className="text-sm text-gray-600">Tags auswählen:</label>
+                        <label className="text-sm text-gray-600 text-center sm:text-left block">Tags auswählen:</label>
                         <div className="max-h-32 overflow-y-auto border rounded-lg p-2 space-y-1">
                           {tags.length === 0 ? (
-                            <p className="text-sm text-gray-500">Keine Tags vorhanden</p>
+                            <p className="text-sm text-gray-500 text-center sm:text-left">Keine Tags vorhanden</p>
                           ) : (
                             tags.map((tag) => (
                               <label key={tag.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
@@ -1105,13 +1106,13 @@ export default function KlausurBuilder() {
                         {!showNewTagInput ? (
                           <button
                             onClick={() => setShowNewTagInput(true)}
-                            className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                            className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1 justify-center sm:justify-start"
                           >
                             <PlusCircle className="h-4 w-4" />
                             Neuen Tag erstellen
                           </button>
                         ) : (
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <input
                               type="text"
                               value={newTagName}
@@ -1142,8 +1143,8 @@ export default function KlausurBuilder() {
                       {/* Ausgewählte Tags anzeigen */}
                       {selectedTags.length > 0 && (
                         <div className="space-y-2">
-                          <label className="text-sm text-gray-600">Ausgewählte Tags:</label>
-                          <div className="flex flex-wrap gap-2">
+                          <label className="text-sm text-gray-600 text-center sm:text-left block">Ausgewählte Tags:</label>
+                          <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
                             {selectedTags.map((tag) => (
                               <span
                                 key={tag.id}
@@ -1172,9 +1173,9 @@ export default function KlausurBuilder() {
 
       {/* Hinweis Modal */}
       {showHintModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-lg p-6 space-y-4">
-            <h3 className="font-medium">Hinweis hinzufügen</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4 sm:p-6 space-y-4">
+            <h3 className="font-medium text-center sm:text-left">Hinweis hinzufügen</h3>
             <textarea
               rows={6}
               className="w-full border rounded-lg p-3 text-sm"
@@ -1182,7 +1183,7 @@ export default function KlausurBuilder() {
               value={tempHint}
               onChange={(e) => setTempHint(e.target.value)}
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
               <button
                 onClick={() => setShowHintModal(false)}
                 className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-50"
@@ -1205,41 +1206,41 @@ export default function KlausurBuilder() {
 
       {/* Element Auswahl Modal */}
       {showElementModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-3xl shadow-2xl w-[95%] max-w-6xl max-h-[90vh] overflow-hidden"
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl sm:max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-8 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl text-white">
-                  <Plus className="h-7 w-7" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 lg:p-8 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl sm:rounded-2xl text-white">
+                  <Plus className="h-5 w-5 sm:h-7 sm:w-7" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900">Element hinzufügen</h2>
-                  <p className="text-gray-600">Wähle den Typ des Elements aus</p>
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Element hinzufügen</h2>
+                  <p className="text-sm text-gray-600">Wähle den Typ des Elements aus</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowElementModal(false)}
-                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all"
+                className="p-2 sm:p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl sm:rounded-2xl transition-all self-end sm:self-auto"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(80vh-120px)]">
               {/* Fragen */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <ListChecks className="h-5 w-5 text-indigo-600" />
+              <div className="mb-6 sm:mb-8">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
                   Fragen
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {QUESTION_TYPES.map((type) => {
                     const Icon = type.icon;
                     return (
@@ -1249,17 +1250,17 @@ export default function KlausurBuilder() {
                           addElement(type.value);
                           setShowElementModal(false);
                         }}
-                        className="p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+                        className="p-3 sm:p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
-                            <Icon className="h-6 w-6 text-indigo-600" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="p-1.5 sm:p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                            <Icon className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600" />
                           </div>
-                          <div className="text-left">
-                            <h4 className="font-medium text-gray-800 group-hover:text-indigo-700">
+                          <div className="text-left min-w-0 flex-1">
+                            <h4 className="font-medium text-gray-800 group-hover:text-indigo-700 text-sm sm:text-base">
                               {type.label}
                             </h4>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-gray-500">
                               {type.value === "short-text" && "Kurze Textantwort"}
                               {type.value === "long-text" && "Lange Textantwort"}
                               {type.value === "multiple-choice" && "Mehrere Antworten möglich"}
@@ -1279,11 +1280,11 @@ export default function KlausurBuilder() {
 
               {/* Zwischenelemente */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Info className="h-5 w-5 text-green-600" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                  <Info className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                   Zwischenelemente
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {ELEMENT_TYPES.map((type) => {
                     const Icon = type.icon;
                     return (
@@ -1293,17 +1294,17 @@ export default function KlausurBuilder() {
                           addElement(type.value);
                           setShowElementModal(false);
                         }}
-                        className="p-4 border-2 border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all duration-200 group"
+                        className="p-3 sm:p-4 border-2 border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all duration-200 group"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                            <Icon className="h-6 w-6 text-green-600" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                            <Icon className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                           </div>
-                          <div className="text-left">
-                            <h4 className="font-medium text-gray-800 group-hover:text-green-700">
+                          <div className="text-left min-w-0 flex-1">
+                            <h4 className="font-medium text-gray-800 group-hover:text-green-700 text-sm sm:text-base">
                               {type.label}
                             </h4>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-gray-500">
                               {type.value === "info-block" && "Informationsblock mit Text"}
                               {type.value === "youtube-embed" && "YouTube Video einbetten"}
                             </p>
