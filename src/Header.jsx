@@ -1,4 +1,4 @@
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { useEffect, useState } from "react";
@@ -8,24 +8,39 @@ export default function Header() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [organization, setOrganization] = useState(null);
 
   useEffect(() => {
     if (user) {
       supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, organization(name)")
         .eq("id", user.id)
         .single()
         .then(({ data, error }) => {
-          if (!error) setProfile(data);
+          if (!error) {
+            setProfile(data);
+            setOrganization(data.organization?.name);
+          }
         });
     }
   }, [user]);
 
   return (
     <header className="h-16 flex items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-      {/* Left: App Title */}
-      <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+      {/* Left: Organization (if exists) or App Title */}
+      <div className="flex items-center gap-3">
+        {organization ? (
+          <>
+            <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-lg border border-indigo-200">
+              <Building2 className="h-4 w-4 text-indigo-600" />
+              <span className="text-sm font-medium text-indigo-700">{organization}</span>
+            </div>
+          </>
+        ) : (
+          <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+        )}
+      </div>
 
       {/* Middle: Search */}
       <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 w-80">

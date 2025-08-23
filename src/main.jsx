@@ -12,6 +12,7 @@ import KlausurUeben from "./KlausurUeben";
 import Activities from "./Activities"; // 👈 neu importiert
 import MeineHistorie from "./MeineHistorie";
 import AI from "./AI";
+import Leaderboard from "./Leaderboard";
 import "./index.css";
 import {
   BrowserRouter as Router,
@@ -36,6 +37,7 @@ function ProtectedAppRoutes() {
         <Route path="activities" element={<Activities />} /> {/* 👈 neue Seite */}
         <Route path="meine-historie" element={<MeineHistorie />} /> {/* 👈 neue Seite */}
         <Route path="ai" element={<AI />} /> {/* 👈 neue Seite */}
+        <Route path="leaderboard" element={<Leaderboard />} />
       </Route>
 
       {/* Fallback */}

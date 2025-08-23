@@ -3,11 +3,12 @@ import {
   Bell, Home, ListTodo, FileText, Star, ChevronDown,
   ClipboardList, Users, CreditCard, Clock3,
   FileCog, FolderOpen, UserCircle2, Users2, Share2, MessagesSquare,
-  Mail, Search, Sparkles, History
+  Mail, Search, Sparkles, History, Trophy
 } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./lib/supabase";
 import { NavLink } from "react-router-dom";
+import millionrepsLogo from "./utils/img/millionreps.svg";
 
 // ---------- UserCard ----------
 const UserCard = () => {
@@ -179,36 +180,15 @@ const Kbd = ({ children }) => (
   </kbd>
 );
 
-const Brand = () => {
-  const { user } = useAuth();
-  const [org, setOrg] = useState(null);
-
-  useEffect(() => {
-    const fetchOrg = async () => {
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization(name)")
-        .eq("id", user.id)
-        .single();
-
-      setOrg(profile?.organization?.name);
-    };
-
-    fetchOrg();
-  }, [user]);
-
+const MillionRepsLogo = () => {
   return (
-    <div className="flex items-center gap-3 px-2 pb-2">
-      <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-orange-400" />
-      <div className="flex-1">
-        <div className="flex items-center gap-1">
-          <span className="font-medium text-gray-900 leading-5">
-            {org || "Keine Organisation"}
-          </span>
-        </div>
-        <div className="text-xs text-gray-500 -mt-0.5">Organisation</div>
+    <div className="flex justify-start px-4 pb-2 pt-0">
+      <div className="h-12 w-32">
+        <img 
+          src={millionrepsLogo}
+          alt="MillionReps" 
+          className="h-full w-full object-contain"
+        />
       </div>
     </div>
   );
@@ -232,7 +212,7 @@ const Sidebar = () => {
   return (
     <aside className="flex h-screen w-[280px] flex-col rounded-r-2xl border-r border-gray-200 bg-white shadow-sm">
       <div className="pt-3">
-        <Brand />
+        <MillionRepsLogo />
         <SearchBar />
       </div>
 
@@ -265,6 +245,7 @@ const Sidebar = () => {
         {/* Section: Contacts */}
         <Section title="Contacts" defaultOpen>
           <div className="space-y-1">
+            <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" />
             <NavItem to="/grantees" icon={UserCircle2} label="Grantees" />
             <NavItem to="/individuals" icon={Users2} label="Individuals" />
             <NavItem to="/constituents" icon={Share2} label="Constituents" />

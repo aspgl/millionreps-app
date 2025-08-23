@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { useAuth } from "./AuthContext";
-import { ArrowLeft, ArrowRight, Check, Rocket, Info, Play, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Rocket, Info, Play, FileText, Star, Trophy, Target, Clock, Award, Zap } from "lucide-react";
 
 // Musterlösung je Fragetyp ermitteln
 const getSolutionText = (question) => {
@@ -47,8 +47,8 @@ export default function KlausurUeben() {
   const [startedAt, setStartedAt] = useState(null); // ISO string
 
   // Self-Assessment:
-  // level 1..4 (¼ .. 4/4), points computed automatically
-  const [levels, setLevels] = useState({}); // { [questionId]: 1..4 }
+  // level 0..4 (0/4 .. 4/4), points computed automatically
+  const [levels, setLevels] = useState({}); // { [questionId]: 0..4 }
   const [points, setPoints] = useState({}); // { [questionId]: number }
 
   // Klausur laden
@@ -156,13 +156,14 @@ export default function KlausurUeben() {
     // Punkte automatisch aus Levels berechnen
     const computedPoints = {};
     questions.forEach((question) => {
-      const lvl = levels[question.id] || 1;
+      const lvl = levels[question.id] || 0;
       const pts = Math.round((lvl / 4) * pointsPerQuestion);
       computedPoints[question.id] = pts;
     });
   
     const totalPoints = Object.values(computedPoints).reduce((a, b) => a + b, 0);
-    const correctQuestions = Object.entries(levels).filter(([_, lvl]) => (lvl || 1) === 4).length;
+    const correctQuestions = Object.entries(levels).filter(([_, lvl]) => (lvl || 0) === 4).length;
+    const partiallyCorrectQuestions = Object.entries(levels).filter(([_, lvl]) => (lvl || 0) >= 2 && (lvl || 0) < 4).length;
   
     const finishedAtIso = new Date().toISOString();
     const durationSeconds =
@@ -482,78 +483,259 @@ export default function KlausurUeben() {
     );
   }
 
-  // Review Mode (Self-Assessment mit 4 Stufen)
+  // Review Mode (Self-Assessment mit 5 Stufen: 0-4)
   if (currentIndex === "review") {
+    const totalPoints = Object.values(points).reduce((a, b) => a + b, 0);
+    const maxPoints = questions.length * pointsPerQuestion;
+    const percentage = Math.round((totalPoints / maxPoints) * 100);
+    
+    // Performance Level basierend auf Prozent
+    const getPerformanceLevel = (percent) => {
+      if (percent >= 90) return { level: "Ausgezeichnet", color: "text-emerald-600", bg: "bg-emerald-50", icon: Trophy };
+      if (percent >= 75) return { level: "Sehr gut", color: "text-blue-600", bg: "bg-blue-50", icon: Star };
+      if (percent >= 60) return { level: "Gut", color: "text-yellow-600", bg: "bg-yellow-50", icon: Target };
+      if (percent >= 40) return { level: "Befriedigend", color: "text-orange-600", bg: "bg-orange-50", icon: Award };
+      return { level: "Verbesserungsbedarf", color: "text-red-600", bg: "bg-red-50", icon: Zap };
+    };
+
+    const performance = getPerformanceLevel(percentage);
+    const PerformanceIcon = performance.icon;
+
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h2 className="text-2xl font-bold">📊 Selbstbewertung</h2>
-        <p className="text-gray-600">
-          Du hast insgesamt {Math.floor(totalTime / 60)}min {totalTime % 60}s gebraucht.
-        </p>
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header mit Statistiken */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold mb-2">🎯 Selbstbewertung abgeschlossen!</h1>
+            <p className="text-indigo-100">Zeit für eine ehrliche Einschätzung deiner Leistung</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{Math.floor(totalTime / 60)}:{String(totalTime % 60).padStart(2, "0")}</div>
+              <div className="text-indigo-200 text-sm">Benötigte Zeit</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{questions.length}</div>
+              <div className="text-indigo-200 text-sm">Fragen beantwortet</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{Math.round(totalPoints)}/{Math.round(maxPoints)}</div>
+              <div className="text-indigo-200 text-sm">Punkte erreicht</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{percentage}%</div>
+              <div className="text-indigo-200 text-sm">Erfolgsquote</div>
+            </div>
+          </div>
+        </div>
 
-        {questions.map((question, idx) => {
-          const lvl = levels[question.id] || 1;
-          const autoPoints = Math.round((lvl / 4) * pointsPerQuestion);
-          return (
-            <div key={question.id} className="bg-white rounded-xl shadow p-6 space-y-3">
-              <h3 className="font-semibold">Frage {idx + 1}</h3>
-              <p className="text-gray-800">
-                {question.type === "true-false" 
-                  ? "Wahr/Falsch Frage"
-                  : question.question || question.front || question.title || <em className="text-gray-400">–</em>}
-              </p>
+        {/* Performance Level */}
+        <div className={`${performance.bg} rounded-xl p-6 border-l-4 border-l-current ${performance.color}`}>
+          <div className="flex items-center gap-4">
+            <PerformanceIcon className="h-8 w-8" />
+            <div>
+              <h2 className="text-xl font-bold">Leistungsniveau: {performance.level}</h2>
+              <p className="text-gray-600">Du hast {percentage}% der maximalen Punkte erreicht</p>
+            </div>
+          </div>
+        </div>
 
-              <div className="text-sm text-gray-700">
-                <p>
-                  <strong>Deine Antwort:</strong>{" "}
-                  {typeof answers[question.id] === "object"
-                    ? JSON.stringify(answers[question.id])
-                    : answers[question.id] || <em className="text-gray-400">–</em>}
-                </p>
-                <p>
-                  <strong>Musterlösung:</strong> {getSolutionText(question)}
-                </p>
+        {/* Fragen-Bewertung */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <Target className="h-6 w-6 text-indigo-600" />
+            Einzelne Fragen bewerten
+          </h2>
+          
+          {questions.map((question, idx) => {
+            const lvl = levels[question.id] || 0;
+            const autoPoints = Math.round((lvl / 4) * pointsPerQuestion);
+            const maxPointsForQuestion = Math.round(pointsPerQuestion);
+            
+            // Level Beschreibungen
+            const levelDescriptions = {
+              0: { text: "Komplett falsch", color: "text-red-600", bg: "bg-red-50" },
+              1: { text: "Teilweise richtig", color: "text-orange-600", bg: "bg-orange-50" },
+              2: { text: "Halb richtig", color: "text-yellow-600", bg: "bg-yellow-50" },
+              3: { text: "Meistens richtig", color: "text-blue-600", bg: "bg-blue-50" },
+              4: { text: "Vollständig richtig", color: "text-emerald-600", bg: "bg-emerald-50" }
+            };
+
+            const currentLevel = levelDescriptions[lvl];
+
+            return (
+              <div key={question.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                {/* Question Header */}
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-lg text-gray-800">Frage {idx + 1}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Punkte:</span>
+                      <span className="font-bold text-indigo-600">{autoPoints}/{maxPointsForQuestion}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  {/* Question Content */}
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-2">Frage:</h4>
+                      <p className="text-gray-700 bg-gray-50 rounded-lg p-3">
+                        {question.type === "true-false" 
+                          ? "Wahr/Falsch Frage"
+                          : question.question || question.front || question.title || <em className="text-gray-400">Keine Frage angegeben</em>}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Deine Antwort:</h4>
+                        <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-l-blue-400">
+                          {typeof answers[question.id] === "object"
+                            ? JSON.stringify(answers[question.id])
+                            : answers[question.id] || <em className="text-gray-400">Keine Antwort</em>}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Musterlösung:</h4>
+                        <div className="bg-green-50 rounded-lg p-3 border-l-4 border-l-green-400">
+                          {getSolutionText(question)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rating Section */}
+                  <div className="border-t pt-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Bewertung (0/4 – 4/4)
+                        </label>
+                        <div className={`px-3 py-1 rounded-full text-sm font-medium ${currentLevel.bg} ${currentLevel.color}`}>
+                          {currentLevel.text}
+                        </div>
+                      </div>
+                      
+                      {/* Rating Slider */}
+                      <div className="space-y-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="4"
+                          step="1"
+                          value={lvl}
+                          onChange={(e) => {
+                            const newLevel = Number(e.target.value);
+                            setLevels((prev) => ({ ...prev, [question.id]: newLevel }));
+                            setPoints((prev) => ({
+                              ...prev,
+                              [question.id]: Math.round((newLevel / 4) * pointsPerQuestion),
+                            }));
+                          }}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                        />
+                        
+                        {/* Rating Labels */}
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span className="text-center">
+                            <div className="font-bold">0/4</div>
+                            <div>Falsch</div>
+                          </span>
+                          <span className="text-center">
+                            <div className="font-bold">1/4</div>
+                            <div>Teilweise</div>
+                          </span>
+                          <span className="text-center">
+                            <div className="font-bold">2/4</div>
+                            <div>Halb</div>
+                          </span>
+                          <span className="text-center">
+                            <div className="font-bold">3/4</div>
+                            <div>Meistens</div>
+                          </span>
+                          <span className="text-center">
+                            <div className="font-bold">4/4</div>
+                            <div>Richtig</div>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Quick Rating Buttons */}
+                      <div className="flex gap-2 flex-wrap">
+                        {[0, 1, 2, 3, 4].map((level) => (
+                          <button
+                            key={level}
+                            onClick={() => {
+                              setLevels((prev) => ({ ...prev, [question.id]: level }));
+                              setPoints((prev) => ({
+                                ...prev,
+                                [question.id]: Math.round((level / 4) * pointsPerQuestion),
+                              }));
+                            }}
+                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                              lvl === level
+                                ? `${levelDescriptions[level].bg} ${levelDescriptions[level].color} border-2 border-current`
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {level}/4
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* 4-Stufen-Slider */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Bewertung (¼ – 4/4)
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="4"
-                  step="1"
-                  value={lvl}
-                  onChange={(e) => {
-                    const newLevel = Number(e.target.value);
-                    setLevels((prev) => ({ ...prev, [question.id]: newLevel }));
-                    setPoints((prev) => ({
-                      ...prev,
-                      [question.id]: Math.round((newLevel / 4) * pointsPerQuestion),
-                    }));
-                  }}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>¼</span><span>2/4</span><span>3/4</span><span>4/4</span>
-                </div>
-                <div className="text-right text-sm mt-1">
-                  Automatisch: <strong>{autoPoints}</strong> / {Math.round(pointsPerQuestion)} Punkte
-                </div>
+        {/* Summary Card */}
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+          <div className="text-center space-y-4">
+            <h3 className="text-xl font-bold text-gray-800">📊 Zusammenfassung</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-indigo-600">{Math.round(totalPoints)}</div>
+                <div className="text-sm text-gray-600">Gesamtpunkte</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{Object.entries(levels).filter(([_, lvl]) => (lvl || 0) === 4).length}</div>
+                <div className="text-sm text-gray-600">Vollständig richtig</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{Object.entries(levels).filter(([_, lvl]) => (lvl || 0) >= 2 && (lvl || 0) < 4).length}</div>
+                <div className="text-sm text-gray-600">Teilweise richtig</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{Object.entries(levels).filter(([_, lvl]) => (lvl || 0) <= 1).length}</div>
+                <div className="text-sm text-gray-600">Verbesserungsbedarf</div>
               </div>
             </div>
-          );
-        })}
+          </div>
+        </div>
 
-        <button
-          onClick={handleFinish}
-          className="w-full mt-2 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
-        >
-          <Check className="inline-block mr-2 h-4 w-4" />
-          Ergebnisse speichern
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={() => setCurrentIndex(allElements.length - 1)}
+            className="flex-1 px-6 py-3 bg-gray-600 text-white rounded-xl shadow hover:bg-gray-700 transition-colors"
+          >
+            <ArrowLeft className="inline-block mr-2 h-4 w-4" />
+            Zurück zur letzten Frage
+          </button>
+          <button
+            onClick={handleFinish}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105"
+          >
+            <Check className="inline-block mr-2 h-4 w-4" />
+            Ergebnisse speichern & XP erhalten
+          </button>
+        </div>
       </div>
     );
   }

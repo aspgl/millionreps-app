@@ -17,27 +17,102 @@ import {
   Clock,
   Info,
   Play,
+  Save,
+  Download,
+  Sparkles,
+  Target,
+  Plus,
 } from "lucide-react";
-import { supabase } from "./lib/supabase"; // dein Supabase Client
-import { useAuth } from "./AuthContext";   // für created_by
+import { supabase } from "./lib/supabase";
+import { useAuth } from "./AuthContext";
 import RichTextEditor from "./RichTextEditor";
 
-// Frage-Typen
+// Frage-Typen mit erweiterten Icons und Beschreibungen
 const QUESTION_TYPES = [
-  { value: "short-text", label: "Kurzantwort", icon: Type },
-  { value: "long-text", label: "Langantwort", icon: AlignLeft },
-  { value: "multiple-choice", label: "Multiple Choice", icon: ListChecks },
-  { value: "single-choice", label: "Single Choice", icon: CheckSquare },
-  { value: "true-false", label: "Wahr/Falsch", icon: CheckSquare },
-  { value: "cloze", label: "Lückentext", icon: FileText },
-  { value: "steps", label: "Schritte", icon: Layers },
-  { value: "flashcard", label: "Karteikarte", icon: BookOpen },
+  { 
+    value: "short-text", 
+    label: "Kurzantwort", 
+    icon: Type,
+    description: "Kurze Textantworten",
+    color: "blue",
+    category: "Text"
+  },
+  { 
+    value: "long-text", 
+    label: "Langantwort", 
+    icon: AlignLeft,
+    description: "Ausführliche Textantworten",
+    color: "green",
+    category: "Text"
+  },
+  { 
+    value: "multiple-choice", 
+    label: "Multiple Choice", 
+    icon: ListChecks,
+    description: "Mehrere Antworten möglich",
+    color: "purple",
+    category: "Auswahl"
+  },
+  { 
+    value: "single-choice", 
+    label: "Single Choice", 
+    icon: CheckSquare,
+    description: "Eine Antwort auswählen",
+    color: "indigo",
+    category: "Auswahl"
+  },
+  { 
+    value: "true-false", 
+    label: "Wahr/Falsch", 
+    icon: CheckSquare,
+    description: "Richtig oder falsch",
+    color: "orange",
+    category: "Auswahl"
+  },
+  { 
+    value: "cloze", 
+    label: "Lückentext", 
+    icon: FileText,
+    description: "Lücken im Text ausfüllen",
+    color: "teal",
+    category: "Text"
+  },
+  { 
+    value: "steps", 
+    label: "Schritte", 
+    icon: Layers,
+    description: "Schritt-für-Schritt Anleitung",
+    color: "pink",
+    category: "Strukturiert"
+  },
+  { 
+    value: "flashcard", 
+    label: "Karteikarte", 
+    icon: BookOpen,
+    description: "Vorder- und Rückseite",
+    color: "yellow",
+    category: "Lernen"
+  },
 ];
 
 // Zwischenelement-Typen
 const ELEMENT_TYPES = [
-  { value: "info-block", label: "Informations-Block", icon: Info },
-  { value: "youtube-embed", label: "YouTube Video", icon: Play },
+  { 
+    value: "info-block", 
+    label: "Informations-Block", 
+    icon: Info,
+    description: "Text mit Formatierung",
+    color: "blue",
+    category: "Inhalt"
+  },
+  { 
+    value: "youtube-embed", 
+    label: "YouTube Video", 
+    icon: Play,
+    description: "Video einbetten",
+    color: "red",
+    category: "Media"
+  },
 ];
 
 // Helper
@@ -49,7 +124,7 @@ const uuid = () =>
 const nowIso = () => new Date().toISOString();
 
 export default function KlausurBuilder() {
-  const { user } = useAuth(); // <<--- User aus AuthContext
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -378,54 +453,84 @@ export default function KlausurBuilder() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-800">📘 Klausur-Builder</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={handleOpenSettings}
-            className="rounded-lg bg-gray-600 px-4 py-2 text-white hover:bg-gray-700 flex items-center gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </button>
-          <button
-            onClick={exportExam}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-white hover:bg-violet-700"
-          >
-            Exportieren
-          </button>
-          <button
-            onClick={saveExam}
-            className="rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-          >
-            Speichern
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Klausur Builder</h1>
+                  <p className="text-sm text-gray-600">Erstelle interaktive Lerninhalte</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
+                  <Target className="h-4 w-4" />
+                  <span>{questions.length} Elemente</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full">
+                  <Clock className="h-4 w-4" />
+                  <span>Draft</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleOpenSettings}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </button>
+              <button
+                onClick={exportExam}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+              <button
+                onClick={saveExam}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium shadow-lg hover:shadow-xl"
+              >
+                <Save className="h-4 w-4" />
+                Speichern
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Titel + Beschreibung */}
-      <div className="p-6 space-y-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Titel der Klausur"
-          className="w-full rounded-lg border px-4 py-3 text-lg font-medium placeholder-gray-400"
-        />
-        <textarea
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          placeholder="Beschreibung"
-          rows={2}
-          className="w-full rounded-lg border px-4 py-3 placeholder-gray-400"
-        />
-      </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Titel + Beschreibung */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Titel der Klausur..."
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-xl font-semibold placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+            <textarea
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="Beschreibung der Klausur..."
+              rows={3}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+            />
+          </div>
+        </div>
 
-      {/* Fragen */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <AnimatePresence>
+        {/* Fragen */}
+        <div className="space-y-6">
+          <AnimatePresence>
           {questions.map((q, idx) => {
             const TypeIcon =
               QUESTION_TYPES.find((t) => t.value === q.type)?.icon || Type;
@@ -1100,14 +1205,27 @@ export default function KlausurBuilder() {
 
       {/* Element Auswahl Modal */}
       {showElementModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-4xl max-h-[80vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-3xl shadow-2xl w-[95%] max-w-6xl max-h-[90vh] overflow-hidden"
+          >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-2xl font-bold text-gray-800">Element hinzufügen</h2>
+            <div className="flex items-center justify-between p-8 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl text-white">
+                  <Plus className="h-7 w-7" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900">Element hinzufügen</h2>
+                  <p className="text-gray-600">Wähle den Typ des Elements aus</p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowElementModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -1197,9 +1315,10 @@ export default function KlausurBuilder() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+      </div>
     </div>
   );
 }
