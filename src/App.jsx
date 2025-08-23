@@ -24,13 +24,13 @@ export default function App() {
       </div>
 
       {/* Main area */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Hier erscheinen die Unterseiten */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <div className="max-w-5xl mx-auto">
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4 lg:p-6">
+          <div className="max-w-7xl mx-auto w-full">
             <Outlet />   {/* 👈 wichtig */}
           </div>
         </main>

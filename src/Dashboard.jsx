@@ -379,20 +379,20 @@ export default function Dashboard() {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🚀 Dashboard</h1>
-          <p className="text-gray-600">Willkommen zurück, {profile?.firstname || 'Lerner'}!</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">🚀 Dashboard</h1>
+          <p className="text-sm sm:text-base text-gray-600">Willkommen zurück, {profile?.firstname || 'Lerner'}!</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button 
             onClick={() => window.location.reload()}
             className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
             title="Aktualisieren"
           >
-            <RefreshCw className="h-5 w-5" />
+            <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             {[
@@ -406,7 +406,7 @@ export default function Dashboard() {
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className={`px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                   filter === f.key 
                     ? "bg-white text-indigo-600 shadow-sm" 
                     : "text-gray-600 hover:text-gray-900"
@@ -420,7 +420,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <KPICard
           title="Gesamte Lernzeit"
           value={`${Math.floor(stats.totalTime / 3600)}h ${Math.floor((stats.totalTime % 3600) / 60)}m`}
@@ -460,46 +460,46 @@ export default function Dashboard() {
       </div>
 
       {/* Level & Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <h3 className="text-xl font-bold mb-1">Level {stats.level}</h3>
-              <p className="text-indigo-100">Fortschritt zum nächsten Level</p>
+              <h3 className="text-lg sm:text-xl font-bold mb-1">Level {stats.level}</h3>
+              <p className="text-xs sm:text-sm text-indigo-100">Fortschritt zum nächsten Level</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold">{stats.totalXP}</div>
-              <div className="text-indigo-100">Gesamt XP</div>
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalXP}</div>
+              <div className="text-xs sm:text-sm text-indigo-100">Gesamt XP</div>
             </div>
           </div>
-          <div className="w-full bg-white/20 rounded-full h-3 mb-4">
+          <div className="w-full bg-white/20 rounded-full h-2 sm:h-3 mb-3 sm:mb-4">
             <div 
-              className="bg-white rounded-full h-3 transition-all duration-500"
+              className="bg-white rounded-full h-2 sm:h-3 transition-all duration-500"
               style={{ width: `${Math.min((stats.totalXP % 100) / 1, 100)}%` }}
             ></div>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4" />
+              <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Intelligenz +{stats.level * 2}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4" />
+              <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Kreativität +{stats.level}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
+              <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Nächstes Level: {stats.totalXP % 100}/100 XP</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TargetIcon className="h-5 w-5 text-indigo-600" />
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+            <TargetIcon className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
             Meine Ziele
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {userGoals.length > 0 ? (
               userGoals.slice(0, 3).map((goal) => {
                 const getGoalIcon = (goalType) => {
@@ -537,16 +537,16 @@ export default function Dashboard() {
                 
                 return (
                   <div key={goal.id}>
-                    <div className="flex justify-between text-sm mb-1">
+                    <div className="flex justify-between text-xs sm:text-sm mb-1">
                       <span className="flex items-center gap-2">
                         <Icon className="h-3 w-3" />
                         {getGoalLabel(goal.goal_type)}
                       </span>
                       <span>{goal.current_value} / {goal.target_value} {getGoalUnit(goal.goal_type)}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                       <div 
-                        className={`rounded-full h-2 transition-all duration-500 ${
+                        className={`rounded-full h-1.5 sm:h-2 transition-all duration-500 ${
                           progress >= 100 ? 'bg-green-500' : 'bg-indigo-600'
                         }`}
                         style={{ width: `${progress}%` }}
@@ -559,37 +559,37 @@ export default function Dashboard() {
               // Fallback zu den ursprünglichen Zielen wenn keine benutzerdefinierten Ziele vorhanden sind
               <>
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
                     <span>Lernzeit</span>
                     <span>{Math.floor(stats.totalTime / 3600)}h / {stats.weeklyGoal}h</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                     <div 
-                      className="bg-indigo-600 rounded-full h-2 transition-all duration-500"
+                      className="bg-indigo-600 rounded-full h-1.5 sm:h-2 transition-all duration-500"
                       style={{ width: `${Math.min((stats.totalTime / 3600) / stats.weeklyGoal * 100, 100)}%` }}
                     ></div>
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
                     <span>Prüfungen</span>
                     <span>{stats.totalExams} / {Math.max(stats.totalExams + 2, 5)}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                     <div 
-                      className="bg-green-500 rounded-full h-2 transition-all duration-500"
+                      className="bg-green-500 rounded-full h-1.5 sm:h-2 transition-all duration-500"
                       style={{ width: `${Math.min(stats.totalExams / Math.max(stats.totalExams + 2, 5) * 100, 100)}%` }}
                     ></div>
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
                     <span>Durchschnitt</span>
                     <span>{stats.avgScore}% / 90%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                     <div 
-                      className="bg-yellow-500 rounded-full h-2 transition-all duration-500"
+                      className="bg-yellow-500 rounded-full h-1.5 sm:h-2 transition-all duration-500"
                       style={{ width: `${Math.min(stats.avgScore / 90 * 100, 100)}%` }}
                     ></div>
                   </div>
@@ -601,14 +601,14 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Performance Chart */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-indigo-600" />
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
             Leistungsverlauf
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
@@ -617,13 +617,14 @@ export default function Dashboard() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" stroke="#6B7280" fontSize={12} />
-              <YAxis stroke="#6B7280" fontSize={12} />
+              <XAxis dataKey="date" stroke="#6B7280" fontSize={10} className="sm:text-xs" />
+              <YAxis stroke="#6B7280" fontSize={10} className="sm:text-xs" />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white', 
                   border: '1px solid #e5e7eb',
-                  borderRadius: '8px'
+                  borderRadius: '8px',
+                  fontSize: '12px'
                 }}
               />
               <Area 
@@ -638,19 +639,19 @@ export default function Dashboard() {
         </div>
 
         {/* Subject Performance */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-indigo-600" />
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
             Fächer-Performance
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
             <PieChart>
               <Pie
                 data={pieData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={50}
+                outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
               >
@@ -662,17 +663,18 @@ export default function Dashboard() {
                 contentStyle={{ 
                   backgroundColor: 'white', 
                   border: '1px solid #e5e7eb',
-                  borderRadius: '8px'
+                  borderRadius: '8px',
+                  fontSize: '12px'
                 }}
                 formatter={(value, name) => [`${value}%`, name]}
               />
             </PieChart>
           </ResponsiveContainer>
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
             {pieData.map((entry, index) => (
-              <div key={entry.name} className="flex items-center gap-2 text-sm">
+              <div key={entry.name} className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                 <div 
-                  className="w-3 h-3 rounded-full"
+                  className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
                   style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 ></div>
                 <span>{entry.name}</span>
@@ -683,31 +685,29 @@ export default function Dashboard() {
         </div>
       </div>
 
-
-
       {/* Recent Activity */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Activity className="h-5 w-5 text-indigo-600" />
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+          <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
           Letzte Aktivitäten
         </h3>
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {activities.slice(0, 5).map((activity, index) => (
-            <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className={`p-2 rounded-lg ${
+            <div key={activity.id} className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className={`p-1.5 sm:p-2 rounded-lg ${
                 activity.total_score >= 90 ? 'bg-green-100 text-green-600' :
                 activity.total_score >= 80 ? 'bg-blue-100 text-blue-600' :
                 activity.total_score >= 70 ? 'bg-yellow-100 text-yellow-600' :
                 'bg-red-100 text-red-600'
               }`}>
-                {activity.total_score >= 90 ? <CheckCircle className="h-4 w-4" /> :
-                 activity.total_score >= 80 ? <Star className="h-4 w-4" /> :
-                 activity.total_score >= 70 ? <AlertCircle className="h-4 w-4" /> :
-                 <AlertCircle className="h-4 w-4" />}
+                {activity.total_score >= 90 ? <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> :
+                 activity.total_score >= 80 ? <Star className="h-3 w-3 sm:h-4 sm:w-4" /> :
+                 activity.total_score >= 70 ? <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" /> :
+                 <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />}
               </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-gray-900">{activity.exams?.title || 'Unbekannte Prüfung'}</h4>
-                <p className="text-sm text-gray-500">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{activity.exams?.title || 'Unbekannte Prüfung'}</h4>
+                <p className="text-xs sm:text-sm text-gray-500">
                   {new Date(activity.finished_at).toLocaleDateString('de-DE', {
                     day: '2-digit',
                     month: '2-digit',
@@ -716,19 +716,19 @@ export default function Dashboard() {
                   })}
                 </p>
               </div>
-              <div className="text-right">
-                <div className="font-semibold text-gray-900">{activity.total_score}%</div>
-                <div className="text-sm text-gray-500">
+              <div className="text-right flex-shrink-0">
+                <div className="font-semibold text-gray-900 text-sm sm:text-base">{activity.total_score}%</div>
+                <div className="text-xs sm:text-sm text-gray-500">
                   {Math.round((activity.duration_seconds || 0) / 60)}m
                 </div>
               </div>
             </div>
           ))}
           {activities.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Play className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p>Noch keine Aktivitäten in diesem Zeitraum</p>
-              <p className="text-sm">Starte deine erste Prüfung!</p>
+            <div className="text-center py-6 sm:py-8 text-gray-500">
+              <Play className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 text-gray-300" />
+              <p className="text-sm sm:text-base">Noch keine Aktivitäten in diesem Zeitraum</p>
+              <p className="text-xs sm:text-sm">Starte deine erste Prüfung!</p>
             </div>
           )}
         </div>
@@ -748,24 +748,25 @@ function KPICard({ title, value, icon: Icon, color, trend, trendUp, subtitle }) 
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} text-white`}>
-          <Icon className="h-6 w-6" />
+    <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-all duration-300">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} text-white`}>
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
         {trend && (
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          <span className={`inline-flex items-center px-1.5 sm:px-2 py-1 rounded-full text-xs font-medium ${
             trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
           }`}>
             {trendUp ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-            {trend}
+            <span className="hidden sm:inline">{trend}</span>
+            <span className="sm:hidden">{trend.replace(/[^0-9%]/g, '')}</span>
           </span>
         )}
       </div>
-      <h3 className="text-2xl font-bold text-gray-900 mb-1">{value}</h3>
-      <p className="text-gray-600 text-sm mb-2">{title}</p>
+      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{value}</h3>
+      <p className="text-gray-600 text-xs sm:text-sm mb-1 sm:mb-2">{title}</p>
       {subtitle && (
-        <p className={`text-sm font-medium ${subtitle.includes('(') ? subtitle.split('(')[1].split(')')[0] : 'text-gray-500'}`}>
+        <p className={`text-xs sm:text-sm font-medium ${subtitle.includes('(') ? subtitle.split('(')[1].split(')')[0] : 'text-gray-500'}`}>
           {subtitle}
         </p>
       )}

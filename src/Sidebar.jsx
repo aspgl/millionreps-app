@@ -153,17 +153,23 @@ const Section = ({ title, children, defaultOpen = true }) => {
   );
 };
 
-const NavItem = ({ to, icon: Icon, label, trailing }) => (
+const NavItem = ({ to, icon: Icon, label, trailing, onClose }) => (
   <NavLink
     to={to}
     end
+    onClick={() => {
+      // Automatically close sidebar on mobile when navigation item is clicked
+      if (window.innerWidth < 1024 && onClose) {
+        onClose();
+      }
+    }}
     className={({ isActive }) =>
       `group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
         isActive ? "bg-gray-100 text-gray-900" : "text-gray-700 hover:bg-gray-50"
       }`
     }
   >
-    <Icon className="h-4 w-4" />
+    <Icon className="h-4 w-4 flex-shrink-0" />
     <span className="flex-1 text-left truncate">{label}</span>
     {trailing}
   </NavLink>
@@ -231,44 +237,44 @@ const Sidebar = ({ onClose }) => {
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-1">
         {/* Hauptpunkte */}
-        <NavItem to="/ai" icon={Sparkles} label="AI" trailing={<StarBadge />} />
-        <NavItem to="/" icon={Home} label="Dashboard" />
-        <NavItem to="/activities" icon={Bell} label="Aktivitäten" />
-        <NavItem to="/tasks" icon={ListTodo} label="Aufgaben"/>
-        <NavItem to="/documents" icon={FileText} label="Dokumente"/>
+        <NavItem to="/ai" icon={Sparkles} label="AI" trailing={<StarBadge />} onClose={onClose} />
+        <NavItem to="/" icon={Home} label="Dashboard" onClose={onClose} />
+        <NavItem to="/activities" icon={Bell} label="Aktivitäten" onClose={onClose} />
+        <NavItem to="/tasks" icon={ListTodo} label="Aufgaben" onClose={onClose} />
+        <NavItem to="/documents" icon={FileText} label="Dokumente" onClose={onClose} />
 
         {/* Section: Workflow */}
         <Section title="Lernen" defaultOpen>
           <div className="space-y-1">
-            <NavItem to="/klausur" icon={ClipboardList} label="Lerninhalt erstellen" />
-            <NavItem to="/meine-lern-inhalte" icon={Users} label="Meine Inhalte" />
-            <NavItem to="/meine-historie" icon={History} label="Meine Historie" />
-            <NavItem to="/reports" icon={Clock3} label="Grantee Reports" />
+            <NavItem to="/klausur" icon={ClipboardList} label="Lerninhalt erstellen" onClose={onClose} />
+            <NavItem to="/meine-lern-inhalte" icon={Users} label="Meine Inhalte" onClose={onClose} />
+            <NavItem to="/meine-historie" icon={History} label="Meine Historie" onClose={onClose} />
+            <NavItem to="/reports" icon={Clock3} label="Grantee Reports" onClose={onClose} />
           </div>
         </Section>
 
         {/* Section: Documents */}
         <Section title="Documents" defaultOpen>
           <div className="space-y-1">
-            <NavItem to="/templates" icon={FileCog} label="Document Templates" />
-            <NavItem to="/centre" icon={FolderOpen} label="Document Centre" />
+            <NavItem to="/templates" icon={FileCog} label="Document Templates" onClose={onClose} />
+            <NavItem to="/centre" icon={FolderOpen} label="Document Centre" onClose={onClose} />
           </div>
         </Section>
 
         {/* Section: Contacts */}
         <Section title="Contacts" defaultOpen>
           <div className="space-y-1">
-            <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" />
-            <NavItem to="/grantees" icon={UserCircle2} label="Grantees" />
-            <NavItem to="/individuals" icon={Users2} label="Individuals" />
-            <NavItem to="/constituents" icon={Share2} label="Constituents" />
-            <NavItem to="/communications" icon={MessagesSquare} label="Communications" />
-            <NavItem to="/klausur" icon={ClipboardList} label="Klausur erstellen" />
+            <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" onClose={onClose} />
+            <NavItem to="/grantees" icon={UserCircle2} label="Grantees" onClose={onClose} />
+            <NavItem to="/individuals" icon={Users2} label="Individuals" onClose={onClose} />
+            <NavItem to="/constituents" icon={Share2} label="Constituents" onClose={onClose} />
+            <NavItem to="/communications" icon={MessagesSquare} label="Communications" onClose={onClose} />
+            <NavItem to="/klausur" icon={ClipboardList} label="Klausur erstellen" onClose={onClose} />
           </div>
         </Section>
 
-        <NavItem to="/email" icon={Mail} label="Email Review" />
-        <NavItem to="/settings" icon={FileCog} label="Einstellungen" />
+        <NavItem to="/email" icon={Mail} label="Email Review" onClose={onClose} />
+        <NavItem to="/settings" icon={FileCog} label="Einstellungen" onClose={onClose} />
       </nav>
 
       <div className="mt-auto">
