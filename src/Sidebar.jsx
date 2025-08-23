@@ -217,7 +217,7 @@ const SearchBar = () => (
 // ---------- Sidebar ----------
 const Sidebar = ({ onClose }) => {
   return (
-    <aside className="flex h-screen w-[280px] flex-col rounded-r-2xl border-r border-gray-200 bg-white shadow-sm">
+    <aside className="flex h-[100dvh] w-[280px] flex-col rounded-r-2xl border-r border-gray-200 bg-white shadow-sm">
       {/* Mobile Header */}
       <div className="flex items-center justify-between border-b border-gray-200 p-4 lg:hidden">
         <MillionRepsLogo />
@@ -277,7 +277,7 @@ const Sidebar = ({ onClose }) => {
         <NavItem to="/settings" icon={FileCog} label="Einstellungen" onClose={onClose} />
       </nav>
 
-      <div className="mt-auto">
+      <div className="mt-auto pb-safe">
         <UserCard />
       </div>
     </aside>

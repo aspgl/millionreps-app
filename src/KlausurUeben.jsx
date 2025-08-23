@@ -502,7 +502,7 @@ export default function KlausurUeben() {
     const PerformanceIcon = performance.icon;
 
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8 pb-safe">
         {/* Header mit Statistiken */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
           <div className="text-center mb-6">
@@ -750,7 +750,7 @@ export default function KlausurUeben() {
 
   // Frage-Viewer mit Tabs
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-safe">
       <div className="bg-white rounded-xl shadow overflow-hidden">
         {/* Header mit Tabs */}
         <div className="border-b">

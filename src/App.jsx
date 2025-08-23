@@ -7,7 +7,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+    <div className="flex h-[100dvh] w-screen overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -29,7 +29,7 @@ export default function App() {
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Hier erscheinen die Unterseiten */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4 lg:p-6 pb-safe">
           <div className="max-w-7xl mx-auto w-full">
             <Outlet />   {/* 👈 wichtig */}
           </div>
