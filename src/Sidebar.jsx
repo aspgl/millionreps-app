@@ -3,7 +3,7 @@ import {
   Bell, Home, ListTodo, FileText, Star, ChevronDown,
   ClipboardList, Users, CreditCard, Clock3,
   FileCog, FolderOpen, UserCircle2, Users2, Share2, MessagesSquare,
-  Mail, Search, Sparkles, History, Trophy
+  Mail, Search, Sparkles, History, Trophy, X
 } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./lib/supabase";
@@ -138,6 +138,7 @@ const UserCard = () => {
 // ---------- Hilfs-Komponenten ----------
 const Section = ({ title, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
+
   return (
     <div>
       <button
@@ -208,10 +209,22 @@ const SearchBar = () => (
 );
 
 // ---------- Sidebar ----------
-const Sidebar = () => {
+const Sidebar = ({ onClose }) => {
   return (
     <aside className="flex h-screen w-[280px] flex-col rounded-r-2xl border-r border-gray-200 bg-white shadow-sm">
-      <div className="pt-3">
+      {/* Mobile Header */}
+      <div className="flex items-center justify-between border-b border-gray-200 p-4 lg:hidden">
+        <MillionRepsLogo />
+        <button
+          onClick={onClose}
+          className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Desktop Logo */}
+      <div className="hidden lg:block pt-3">
         <MillionRepsLogo />
         <SearchBar />
       </div>

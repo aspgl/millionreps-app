@@ -1,10 +1,10 @@
-import { Bell, Search, Building2 } from "lucide-react";
+import { Bell, Search, Building2, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -30,6 +30,14 @@ export default function Header() {
     <header className="h-16 flex items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
       {/* Left: Organization (if exists) or App Title */}
       <div className="flex items-center gap-3">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={onMenuClick}
+          className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
         {organization ? (
           <>
             <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-lg border border-indigo-200">
