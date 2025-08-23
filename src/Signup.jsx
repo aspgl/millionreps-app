@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "./lib/supabase";
+import { supabase, getAuthRedirectUrl } from "./lib/supabase";
 import AuthLayout from "./components/AuthLayout";
 import AuthInput from "./components/AuthInput";
 import AuthButton from "./components/AuthButton";
@@ -31,6 +31,9 @@ export default function Signup({ onSwitch }) {
     setLoading(true);
 
     try {
+      // Get the correct redirect URL
+      const redirectUrl = getAuthRedirectUrl();
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
@@ -40,7 +43,7 @@ export default function Signup({ onSwitch }) {
             lastname: form.lastname,
             username: form.username,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: redirectUrl,
         },
       });
 
