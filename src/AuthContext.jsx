@@ -23,8 +23,22 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        throw error;
+      }
+      // User state will be automatically updated by the auth listener
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -40,7 +40,7 @@ export default function Login({ onSwitch }) {
       title="Willkommen zurück" 
       subtitle="Melde dich in deinem Konto an"
     >
-      <form onSubmit={handleLogin} className="space-y-6">
+      <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
         <AuthInput
           label="E-Mail"
           name="email"
@@ -53,34 +53,33 @@ export default function Login({ onSwitch }) {
           required
         />
 
-        <div className="relative">
-          <AuthInput
-            label="Passwort"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Dein Passwort"
-            value={form.password}
-            onChange={handleChange}
-            icon={Lock}
-            error={error}
-            required
-          />
-          
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        </div>
+        <AuthInput
+          label="Passwort"
+          name="password"
+          type={showPassword ? "text" : "password"}
+          placeholder="Dein Passwort"
+          value={form.password}
+          onChange={handleChange}
+          icon={Lock}
+          rightIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          }
+          error={error}
+          required
+        />
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center text-gray-300 hover:text-white transition-colors cursor-pointer">
-            <input type="checkbox" className="mr-2 rounded border-gray-400 text-blue-600 focus:ring-blue-500" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
+          <label className="flex items-center text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">
+            <input type="checkbox" className="mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
             Angemeldet bleiben
           </label>
-                      <button type="button" className="text-blue-400 hover:text-blue-300 transition-colors">
+          <button type="button" className="text-indigo-600 hover:text-indigo-700 transition-colors">
             Passwort vergessen?
           </button>
         </div>
@@ -89,12 +88,12 @@ export default function Login({ onSwitch }) {
           {loading ? "Anmelden..." : "Anmelden"}
         </AuthButton>
 
-        <div className="relative my-6">
+        <div className="relative my-4 sm:my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/20"></div>
+            <div className="w-full border-t border-gray-200"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-transparent text-gray-400">oder</span>
+          <div className="relative flex justify-center text-xs sm:text-sm">
+            <span className="px-2 bg-white text-gray-500">oder</span>
           </div>
         </div>
 
@@ -109,12 +108,12 @@ export default function Login({ onSwitch }) {
         </AuthButton>
 
         <div className="text-center">
-          <p className="text-gray-300 text-sm">
+          <p className="text-gray-600 text-xs sm:text-sm">
             Noch kein Konto?{" "}
             <button
               type="button"
               onClick={onSwitch}
-              className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+              className="text-indigo-600 hover:text-indigo-700 font-semibold transition-colors"
             >
               Jetzt registrieren
             </button>

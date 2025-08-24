@@ -453,9 +453,9 @@ export default function KlausurBuilder() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-gray-50 to-gray-100 pb-safe">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-primary dark:to-dark-secondary pb-safe">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-dark-card border-b border-gray-200 dark:border-dark-border shadow-sm">
         <div className="w-full px-3 sm:px-4 lg:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
@@ -464,16 +464,16 @@ export default function KlausurBuilder() {
                   <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div className="text-center sm:text-left">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Klausur Builder</h1>
-                  <p className="text-xs sm:text-sm text-gray-600">Erstelle interaktive Lerninhalte</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-dark-text">Klausur Builder</h1>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">Erstelle interaktive Lerninhalte</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm justify-center sm:justify-start">
-                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
+                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full">
                   <Target className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{questions.length} Elemente</span>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full">
+                <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded-full">
                   <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Draft</span>
                 </div>
@@ -482,14 +482,14 @@ export default function KlausurBuilder() {
             <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-end">
               <button
                 onClick={handleOpenSettings}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all text-xs sm:text-sm"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-secondary rounded-xl transition-all text-xs sm:text-sm"
               >
                 <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Settings</span>
               </button>
               <button
                 onClick={exportExam}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all text-xs sm:text-sm"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text hover:bg-gray-100 dark:hover:bg-dark-secondary rounded-xl transition-all text-xs sm:text-sm"
               >
                 <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Export</span>

@@ -17,9 +17,67 @@ export default function Signup({ onSwitch }) {
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: "", color: "" });
+
+  const calculatePasswordStrength = (password) => {
+    let score = 0;
+    let feedback = [];
+
+    // Länge prüfen
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
+    if (password.length >= 16) score += 1;
+
+    // Kleinbuchstaben
+    if (/[a-z]/.test(password)) score += 1;
+
+    // Großbuchstaben
+    if (/[A-Z]/.test(password)) score += 1;
+
+    // Zahlen
+    if (/\d/.test(password)) score += 1;
+
+    // Sonderzeichen
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
+
+    // Keine einfachen Muster
+    if (!/(.)\1{2,}/.test(password)) score += 1;
+
+    // Keine einfachen Wörter
+    const commonWords = ['password', '123456', 'qwerty', 'admin', 'user'];
+    if (!commonWords.some(word => password.toLowerCase().includes(word))) score += 1;
+
+    // Score in Label und Farbe umwandeln
+    let label, color;
+    if (score <= 2) {
+      label = "Sehr schwach";
+      color = "red";
+    } else if (score <= 4) {
+      label = "Schwach";
+      color = "orange";
+    } else if (score <= 6) {
+      label = "Mittel";
+      color = "yellow";
+    } else if (score <= 8) {
+      label = "Stark";
+      color = "lightgreen";
+    } else {
+      label = "Sehr stark";
+      color = "green";
+    }
+
+    return { score: Math.min(score, 10), label, color };
+  };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Passwortstärke berechnen wenn Passwort geändert wird
+    if (name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
+    }
+    
     if (error) setError(null);
     if (message) setMessage(null);
   };
@@ -64,8 +122,8 @@ export default function Signup({ onSwitch }) {
       title="Konto erstellen" 
       subtitle="Starte deine Lernreise mit MillionReps"
     >
-      <form onSubmit={handleSignup} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={handleSignup} className="space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <AuthInput
             label="Vorname"
             name="firstname"
@@ -108,57 +166,77 @@ export default function Signup({ onSwitch }) {
           required
         />
 
-        <div className="relative">
-          <AuthInput
-            label="Passwort"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Mindestens 8 Zeichen"
-            value={form.password}
-            onChange={handleChange}
-            icon={Lock}
-            error={error}
-            required
-          />
-          
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        </div>
+        <AuthInput
+          label="Passwort"
+          name="password"
+          type={showPassword ? "text" : "password"}
+          placeholder="Mindestens 8 Zeichen"
+          value={form.password}
+          onChange={handleChange}
+          icon={Lock}
+          rightIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          }
+          error={error}
+          required
+        />
 
         {/* Password strength indicator */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-300">Passwort-Stärke</span>
-            <span className="text-blue-400">Mittel</span>
+        {form.password && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-gray-600">Passwort-Stärke</span>
+              <span className={`font-medium ${
+                passwordStrength.color === 'red' ? 'text-red-600' :
+                passwordStrength.color === 'orange' ? 'text-orange-600' :
+                passwordStrength.color === 'yellow' ? 'text-yellow-600' :
+                passwordStrength.color === 'lightgreen' ? 'text-green-600' :
+                'text-green-700'
+              }`}>
+                {passwordStrength.label}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
+              <div 
+                className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                  passwordStrength.color === 'red' ? 'bg-red-500' :
+                  passwordStrength.color === 'orange' ? 'bg-orange-500' :
+                  passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
+                  passwordStrength.color === 'lightgreen' ? 'bg-green-500' :
+                  'bg-green-600'
+                }`}
+                style={{ width: `${(passwordStrength.score / 10) * 100}%` }}
+              ></div>
+            </div>
+            <div className="flex items-center text-xs text-gray-500">
+              <CheckCircle className="w-3 h-3 mr-1 text-green-500 flex-shrink-0" />
+              <span className="text-xs">
+                {passwordStrength.score >= 6 ? 'Gutes Passwort!' : 'Mindestens 8 Zeichen, Groß-/Kleinbuchstaben, Zahlen und Sonderzeichen'}
+              </span>
+            </div>
           </div>
-          <div className="w-full bg-white/10 rounded-full h-2">
-            <div className="bg-gradient-to-r from-red-500 to-yellow-500 h-2 rounded-full w-2/3"></div>
-          </div>
-          <div className="flex items-center text-xs text-gray-400">
-            <CheckCircle className="w-3 h-3 mr-1 text-green-400" />
-            Mindestens 8 Zeichen
-          </div>
-        </div>
+        )}
 
         <div className="flex items-start space-x-3">
-                      <input
-              type="checkbox"
-              id="terms"
-              className="mt-1 rounded border-gray-400 text-blue-600 focus:ring-blue-500"
-              required
-            />
-          <label htmlFor="terms" className="text-sm text-gray-300">
+          <input
+            type="checkbox"
+            id="terms"
+            className="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
+            required
+          />
+          <label htmlFor="terms" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
             Ich stimme den{" "}
-            <button type="button" className="text-blue-400 hover:text-blue-300">
+            <button type="button" className="text-indigo-600 hover:text-indigo-700">
               Nutzungsbedingungen
             </button>{" "}
             und der{" "}
-            <button type="button" className="text-blue-400 hover:text-blue-300">
+            <button type="button" className="text-indigo-600 hover:text-indigo-700">
               Datenschutzerklärung
             </button>{" "}
             zu
@@ -166,13 +244,13 @@ export default function Signup({ onSwitch }) {
         </div>
 
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs sm:text-sm">
             {error}
           </div>
         )}
 
         {message && (
-          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm">
+          <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-xs sm:text-sm">
             {message}
           </div>
         )}
@@ -181,12 +259,12 @@ export default function Signup({ onSwitch }) {
           {loading ? "Konto erstellen..." : "Konto erstellen"}
         </AuthButton>
 
-        <div className="relative my-6">
+        <div className="relative my-4 sm:my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/20"></div>
+            <div className="w-full border-t border-gray-200"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-transparent text-gray-400">oder</span>
+          <div className="relative flex justify-center text-xs sm:text-sm">
+            <span className="px-2 bg-white text-gray-500">oder</span>
           </div>
         </div>
 
@@ -201,12 +279,12 @@ export default function Signup({ onSwitch }) {
         </AuthButton>
 
         <div className="text-center">
-          <p className="text-gray-300 text-sm">
+          <p className="text-gray-600 text-xs sm:text-sm">
             Bereits ein Konto?{" "}
             <button
               type="button"
               onClick={onSwitch}
-              className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+              className="text-indigo-600 hover:text-indigo-700 font-semibold transition-colors"
             >
               Jetzt anmelden
             </button>

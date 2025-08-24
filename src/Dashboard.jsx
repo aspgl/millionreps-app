@@ -340,8 +340,8 @@ export default function Dashboard() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Lade Dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-dark-accent mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-dark-text-secondary">Lade Dashboard...</p>
         </div>
       </div>
     );
@@ -383,18 +383,18 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">🚀 Dashboard</h1>
-          <p className="text-sm sm:text-base text-gray-600">Willkommen zurück, {profile?.firstname || 'Lerner'}!</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-dark-text mb-1 sm:mb-2">🚀 Dashboard</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary">Willkommen zurück, {profile?.firstname || 'Lerner'}!</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <button 
             onClick={() => window.location.reload()}
-            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="p-2 rounded-lg bg-gray-100 dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-dark-primary transition-colors"
             title="Aktualisieren"
           >
             <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-gray-100 dark:bg-dark-secondary rounded-lg p-1">
             {[
               { key: "today", label: "Heute" },
               { key: "7d", label: "7T" },
@@ -408,8 +408,8 @@ export default function Dashboard() {
                 onClick={() => setFilter(f.key)}
                 className={`px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                   filter === f.key 
-                    ? "bg-white text-indigo-600 shadow-sm" 
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white dark:bg-dark-card text-indigo-600 dark:text-dark-accent shadow-sm" 
+                    : "text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text"
                 }`}
               >
                 {f.label}
@@ -494,9 +494,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white dark:bg-dark-card rounded-xl sm:rounded-2xl border border-gray-200 dark:border-dark-border p-4 sm:p-6">
           <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-            <TargetIcon className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+            <TargetIcon className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 dark:text-dark-accent" />
             Meine Ziele
           </h3>
           <div className="space-y-3 sm:space-y-4">
@@ -686,14 +686,14 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white dark:bg-dark-card rounded-xl sm:rounded-2xl border border-gray-200 dark:border-dark-border p-4 sm:p-6">
         <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-          <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+          <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 dark:text-dark-accent" />
           Letzte Aktivitäten
         </h3>
         <div className="space-y-2 sm:space-y-3">
           {activities.slice(0, 5).map((activity, index) => (
-            <div key={activity.id} className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div key={activity.id} className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-secondary transition-colors">
               <div className={`p-1.5 sm:p-2 rounded-lg ${
                 activity.total_score >= 90 ? 'bg-green-100 text-green-600' :
                 activity.total_score >= 80 ? 'bg-blue-100 text-blue-600' :
@@ -706,8 +706,8 @@ export default function Dashboard() {
                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{activity.exams?.title || 'Unbekannte Prüfung'}</h4>
-                <p className="text-xs sm:text-sm text-gray-500">
+                <h4 className="font-medium text-gray-900 dark:text-dark-text text-sm sm:text-base truncate">{activity.exams?.title || 'Unbekannte Prüfung'}</h4>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-secondary">
                   {new Date(activity.finished_at).toLocaleDateString('de-DE', {
                     day: '2-digit',
                     month: '2-digit',
@@ -717,16 +717,16 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="font-semibold text-gray-900 text-sm sm:text-base">{activity.total_score}%</div>
-                <div className="text-xs sm:text-sm text-gray-500">
+                <div className="font-semibold text-gray-900 dark:text-dark-text text-sm sm:text-base">{activity.total_score}%</div>
+                <div className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-secondary">
                   {Math.round((activity.duration_seconds || 0) / 60)}m
                 </div>
               </div>
             </div>
           ))}
           {activities.length === 0 && (
-            <div className="text-center py-6 sm:py-8 text-gray-500">
-              <Play className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 text-gray-300" />
+            <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-dark-text-secondary">
+              <Play className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 text-gray-300 dark:text-dark-text-secondary" />
               <p className="text-sm sm:text-base">Noch keine Aktivitäten in diesem Zeitraum</p>
               <p className="text-xs sm:text-sm">Starte deine erste Prüfung!</p>
             </div>
@@ -748,7 +748,7 @@ function KPICard({ title, value, icon: Icon, color, trend, trendUp, subtitle }) 
   };
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-all duration-300">
+    <div className="bg-white dark:bg-dark-card rounded-xl sm:rounded-2xl border border-gray-200 dark:border-dark-border p-4 sm:p-6 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} text-white`}>
           <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -763,8 +763,8 @@ function KPICard({ title, value, icon: Icon, color, trend, trendUp, subtitle }) 
           </span>
         )}
       </div>
-      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{value}</h3>
-      <p className="text-gray-600 text-xs sm:text-sm mb-1 sm:mb-2">{title}</p>
+      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-dark-text mb-1">{value}</h3>
+      <p className="text-gray-600 dark:text-dark-text-secondary text-xs sm:text-sm mb-1 sm:mb-2">{title}</p>
       {subtitle && (
         <p className={`text-xs sm:text-sm font-medium ${subtitle.includes('(') ? subtitle.split('(')[1].split(')')[0] : 'text-gray-500'}`}>
           {subtitle}

@@ -27,43 +27,43 @@ export default function Header({ onMenuClick }) {
   }, [user]);
 
   return (
-    <header className="h-16 flex items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
+    <header className="h-16 flex items-center justify-between border-b border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-6 shadow-sm">
       {/* Left: Organization (if exists) or App Title */}
       <div className="flex items-center gap-3">
         {/* Mobile Menu Button */}
         <button
           onClick={onMenuClick}
-          className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 lg:hidden"
+          className="rounded-lg p-2 text-gray-600 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-secondary hover:text-gray-900 dark:hover:text-dark-text lg:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         {organization ? (
           <>
-            <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-lg border border-indigo-200">
-              <Building2 className="h-4 w-4 text-indigo-600" />
-              <span className="text-sm font-medium text-indigo-700">{organization}</span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-dark-accent/10 rounded-lg border border-indigo-200 dark:border-dark-accent/20">
+              <Building2 className="h-4 w-4 text-indigo-600 dark:text-dark-accent" />
+              <span className="text-sm font-medium text-indigo-700 dark:text-dark-accent">{organization}</span>
             </div>
           </>
         ) : (
-          <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Dashboard</h1>
         )}
       </div>
 
       {/* Middle: Search */}
-      <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 w-80">
-        <Search className="h-4 w-4 text-gray-400" />
+      <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-secondary px-3 py-2 text-sm text-gray-600 dark:text-dark-text-secondary w-80">
+        <Search className="h-4 w-4 text-gray-400 dark:text-dark-text-secondary" />
         <input
           placeholder="Search..."
-          className="w-full bg-transparent placeholder:text-gray-400 focus:outline-none"
+          className="w-full bg-transparent placeholder:text-gray-400 dark:placeholder:text-dark-text-secondary focus:outline-none text-gray-900 dark:text-dark-text"
         />
       </div>
 
       {/* Right: Icons + Avatar */}
       <div className="flex items-center gap-4">
-        <button className="relative text-gray-500 hover:text-gray-700">
+        <button className="relative text-gray-500 dark:text-dark-text-secondary hover:text-gray-700 dark:hover:text-dark-text">
           <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-dark-card"></span>
         </button>
 
         {/* Avatar mit Navigation */}

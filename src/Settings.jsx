@@ -1,7 +1,9 @@
 import { useAuth } from "./AuthContext";
+import { useTheme } from "./ThemeContext";
 import { supabase } from "./lib/supabase";
 import { useEffect, useState } from "react";
 import { resizeImage } from "./utils/image";
+import ImageCropper from "./components/ImageCropper";
 import { 
   User, 
   Target, 
@@ -42,6 +44,7 @@ import {
 
 export default function Settings() {
   const { user } = useAuth();
+  const { theme, setThemeMode } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   const [form, setForm] = useState({
     firstname: "",
@@ -51,6 +54,7 @@ export default function Settings() {
     avatar_url: "",
   });
   const [avatarFile, setAvatarFile] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const [goals, setGoals] = useState([]);
@@ -83,6 +87,7 @@ export default function Settings() {
       .single();
 
     console.log("Supabase response:", { data, error });
+    console.log("Avatar URL from database:", data?.avatar_url);
 
     if (data) {
       console.log("Profile data found:", data);
@@ -216,6 +221,26 @@ export default function Settings() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      setShowCropper(true);
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob, fileUrl) => {
+    setAvatarFile(croppedBlob);
+    setShowCropper(false);
+    // Automatically upload the cropped image
+    await handleUploadAvatar(croppedBlob);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setAvatarFile(null);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -237,20 +262,24 @@ export default function Settings() {
     }
   };
 
-  const handleUploadAvatar = async () => {
-    if (!avatarFile || !user) return;
+  const handleUploadAvatar = async (fileToUpload = avatarFile) => {
+    if (!fileToUpload || !user) return;
     setLoading(true);
 
     try {
-      if (!avatarFile.type.startsWith('image/')) {
+      // Check if it's a blob (cropped image) or a file
+      const isBlob = fileToUpload instanceof Blob && !fileToUpload.name;
+      
+      if (!isBlob && !fileToUpload.type.startsWith('image/')) {
         throw new Error('Bitte wähle eine Bilddatei aus');
       }
 
-      if (avatarFile.size > 5 * 1024 * 1024) {
+      if (!isBlob && fileToUpload.size > 5 * 1024 * 1024) {
         throw new Error('Datei ist zu groß (max 5MB)');
       }
 
-      const blob = await resizeImage(avatarFile, 400, 400);
+      // For cropped images (blobs), we don't need to resize again
+      const blob = isBlob ? fileToUpload : await resizeImage(fileToUpload, 400, 400);
       const filePath = `${user.id}/avatar.jpg`;
 
       try {
@@ -273,6 +302,8 @@ export default function Settings() {
         .from("avatars")
         .getPublicUrl(filePath);
 
+      console.log("Generated public URL:", publicUrl);
+
       const { error: dbError } = await supabase
         .from("profiles")
         .update({ avatar_url: publicUrl })
@@ -281,6 +312,7 @@ export default function Settings() {
       if (dbError) throw new Error(`Datenbankfehler: ${dbError.message}`);
 
       setForm((prev) => ({ ...prev, avatar_url: publicUrl }));
+      console.log("Avatar URL updated in form:", publicUrl);
       alert("Profilbild erfolgreich hochgeladen ✅");
       loadUserData();
     } catch (err) {
@@ -383,14 +415,14 @@ export default function Settings() {
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">⚙️ Einstellungen</h1>
-        <p className="text-gray-600">Verwalte dein Profil, Ziele und Präferenzen</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-dark-text mb-2">⚙️ Einstellungen</h1>
+        <p className="text-gray-600 dark:text-dark-text-secondary">Verwalte dein Profil, Ziele und Präferenzen</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+          <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-4">
             <nav className="space-y-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -400,8 +432,8 @@ export default function Settings() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                       activeTab === tab.id
-                        ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-indigo-50 dark:bg-dark-accent/10 text-indigo-700 dark:text-dark-accent border border-indigo-200 dark:border-dark-accent/20"
+                        : "text-gray-600 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-secondary hover:text-gray-900 dark:hover:text-dark-text"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -423,11 +455,14 @@ export default function Settings() {
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <div className="flex items-center gap-6 mb-6">
                   <div className="relative">
-                                         <img
-                       src={form.avatar_url || profile?.avatar_url || "https://i.pravatar.cc/100?u=default"}
-                       alt="Profilbild"
-                       className="h-24 w-24 rounded-full object-cover border-4 border-gray-100 shadow-lg"
-                     />
+                    <img
+                      src={form.avatar_url || profile?.avatar_url || `https://i.pravatar.cc/100?u=${user?.id || "default"}`}
+                      alt="Profilbild"
+                      className="h-24 w-24 rounded-full object-cover border-4 border-gray-100 shadow-lg"
+                      onError={(e) => {
+                        e.target.src = `https://i.pravatar.cc/100?u=${user?.id || "default"}`;
+                      }}
+                    />
                     {loading && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
@@ -459,108 +494,90 @@ export default function Settings() {
 
                 <form onSubmit={handleSave} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                         Vorname
                       </label>
-                                           <input
-                       name="firstname"
-                       value={form.firstname || ""}
-                       onChange={handleChange}
-                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                       placeholder="Dein Vorname"
-                     />
+                      <input
+                        name="firstname"
+                        value={form.firstname || ""}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-secondary focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent transition-all"
+                        placeholder="Dein Vorname"
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                         Nachname
                       </label>
-                                           <input
-                       name="lastname"
-                       value={form.lastname || ""}
-                       onChange={handleChange}
-                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                       placeholder="Dein Nachname"
-                     />
+                      <input
+                        name="lastname"
+                        value={form.lastname || ""}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-secondary focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent transition-all"
+                        placeholder="Dein Nachname"
+                      />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                       Username
                     </label>
-                                         <input
-                       name="username"
-                       value={form.username || ""}
-                       onChange={handleChange}
-                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                       placeholder="dein_username"
-                     />
+                    <input
+                      name="username"
+                      value={form.username || ""}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-secondary focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent transition-all"
+                      placeholder="dein_username"
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                       E-Mail (nicht änderbar)
                     </label>
-                                         <input
-                       value={form.email || ""}
-                       disabled
-                       className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
-                     />
+                    <input
+                      value={form.email || ""}
+                      disabled
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-secondary text-gray-500 dark:text-dark-text-secondary cursor-not-allowed"
+                    />
                   </div>
 
                   {/* Avatar Upload */}
-                  <div className="border-t pt-4">
+                  <div className="border-t border-gray-200 dark:border-dark-border pt-4">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                       <Upload className="h-5 w-5" />
                       Profilbild ändern
                     </h3>
+                    {form.avatar_url && (
+                      <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
+                        Aktuelles Profilbild: {form.avatar_url}
+                      </p>
+                    )}
                     <div className="flex items-center gap-4">
-                      <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                      <label className="cursor-pointer bg-gray-100 dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-dark-primary px-6 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => setAvatarFile(e.target.files[0])}
+                          onChange={handleFileSelect}
                           className="hidden"
                         />
                         📁 Datei auswählen
                       </label>
                       
-                      {avatarFile && (
-                        <span className="text-sm text-gray-600">
-                          {avatarFile.name}
-                        </span>
-                      )}
-                      
-                      {avatarFile && (
-                        <button
-                          type="button"
-                          onClick={handleUploadAvatar}
-                          disabled={loading}
-                          className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
-                        >
-                          {loading ? (
-                            <>
-                              <RefreshCw className="h-4 w-4 animate-spin" />
-                              Wird hochgeladen...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="h-4 w-4" />
-                              Hochladen
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <div className="text-sm text-gray-600 dark:text-dark-text-secondary">
+                        Wähle ein Bild aus und schneide es zu
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Unterstützte Formate: JPG, PNG, GIF (max 5MB)
+                    <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-2">
+                      Unterstützte Formate: JPG, PNG, GIF (max 5MB). Du kannst das Bild zuschneiden und drehen.
                     </p>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent dark:to-purple-600 text-white py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-hover dark:hover:to-purple-700 transition-all font-medium flex items-center justify-center gap-2"
                   >
                     <Save className="h-5 w-5" />
                     Profil speichern
@@ -574,11 +591,11 @@ export default function Settings() {
           {activeTab === "goals" && (
             <div className="space-y-6">
               {/* Goals Header */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">🎯 Meine Ziele</h2>
-                    <p className="text-gray-600">Setze dir Ziele und verfolge deinen Fortschritt</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2">🎯 Meine Ziele</h2>
+                    <p className="text-gray-600 dark:text-dark-text-secondary">Setze dir Ziele und verfolge deinen Fortschritt</p>
                   </div>
                   <button
                     onClick={() => setShowNewGoalForm(true)}
@@ -738,26 +755,47 @@ export default function Settings() {
                       Design & Theme
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="border border-gray-200 rounded-xl p-4 hover:border-indigo-300 cursor-pointer transition-all">
+                      <div 
+                        className={`border rounded-xl p-4 cursor-pointer transition-all ${
+                          theme === 'light' 
+                            ? 'border-indigo-500 bg-indigo-50 dark:bg-dark-accent/10' 
+                            : 'border-gray-200 dark:border-dark-border hover:border-indigo-300 dark:hover:border-dark-accent'
+                        }`}
+                        onClick={() => setThemeMode('light')}
+                      >
                         <div className="flex items-center gap-3 mb-2">
                           <Sun className="h-5 w-5 text-yellow-500" />
                           <span className="font-medium">Hell</span>
                         </div>
-                        <p className="text-sm text-gray-600">Klassisches helles Design</p>
+                        <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Klassisches helles Design</p>
                       </div>
-                      <div className="border border-gray-200 rounded-xl p-4 hover:border-indigo-300 cursor-pointer transition-all">
+                      <div 
+                        className={`border rounded-xl p-4 cursor-pointer transition-all ${
+                          theme === 'dark' 
+                            ? 'border-indigo-500 bg-indigo-50 dark:bg-dark-accent/10' 
+                            : 'border-gray-200 dark:border-dark-border hover:border-indigo-300 dark:hover:border-dark-accent'
+                        }`}
+                        onClick={() => setThemeMode('dark')}
+                      >
                         <div className="flex items-center gap-3 mb-2">
                           <Moon className="h-5 w-5 text-blue-500" />
                           <span className="font-medium">Dunkel</span>
                         </div>
-                        <p className="text-sm text-gray-600">Schonendes dunkles Design</p>
+                        <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Schonendes dunkles Design</p>
                       </div>
-                      <div className="border border-gray-200 rounded-xl p-4 hover:border-indigo-300 cursor-pointer transition-all">
+                      <div 
+                        className={`border rounded-xl p-4 cursor-pointer transition-all ${
+                          theme === 'system' 
+                            ? 'border-indigo-500 bg-indigo-50 dark:bg-dark-accent/10' 
+                            : 'border-gray-200 dark:border-dark-border hover:border-indigo-300 dark:hover:border-dark-accent'
+                        }`}
+                        onClick={() => setThemeMode('system')}
+                      >
                         <div className="flex items-center gap-3 mb-2">
                           <Monitor className="h-5 w-5 text-gray-500" />
                           <span className="font-medium">System</span>
                         </div>
-                        <p className="text-sm text-gray-600">Folgt deinen Systemeinstellungen</p>
+                        <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Folgt deinen Systemeinstellungen</p>
                       </div>
                     </div>
                   </div>
@@ -948,6 +986,16 @@ export default function Settings() {
           )}
         </div>
       </div>
+
+      {/* Image Cropper Modal */}
+      {showCropper && avatarFile && (
+        <ImageCropper
+          imageFile={avatarFile}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1}
+        />
+      )}
     </div>
   );
 }

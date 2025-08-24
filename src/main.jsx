@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider, useAuth } from "./AuthContext";
-import Signup from "./Signup";
-import Login from "./Login";
+import { ThemeProvider } from "./ThemeContext";
+import AuthWrapper from "./components/AuthWrapper";
 import Settings from "./Settings";
 import Dashboard from "./Dashboard";
 import KlausurBuilder from "./KlausurBuilder";
@@ -13,6 +13,8 @@ import Activities from "./Activities"; // 👈 neu importiert
 import MeineHistorie from "./MeineHistorie";
 import AI from "./AI";
 import Leaderboard from "./Leaderboard";
+import DeepWorkTracker from "./DeepWorkTracker";
+import Aufgaben from "./Aufgaben";
 import "./index.css";
 import {
   BrowserRouter as Router,
@@ -38,6 +40,8 @@ function ProtectedAppRoutes() {
         <Route path="meine-historie" element={<MeineHistorie />} /> {/* 👈 neue Seite */}
         <Route path="ai" element={<AI />} /> {/* 👈 neue Seite */}
         <Route path="leaderboard" element={<Leaderboard />} />
+        <Route path="deepwork" element={<DeepWorkTracker />} />
+        <Route path="aufgaben" element={<Aufgaben />} />
       </Route>
 
       {/* Fallback */}
@@ -52,8 +56,8 @@ function RootRouter() {
   if (!user) {
     return (
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<AuthWrapper />} />
+        <Route path="/signup" element={<AuthWrapper />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -64,10 +68,12 @@ function RootRouter() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AuthProvider>
-      <Router>
-        <RootRouter />
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <RootRouter />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

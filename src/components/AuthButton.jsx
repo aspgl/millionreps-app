@@ -8,9 +8,10 @@ const AuthButton = forwardRef(({
   ...props 
 }, ref) => {
   const baseClasses = `
-    w-full px-6 py-4 rounded-xl font-semibold text-white
-    transition-all duration-200 transform
-    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent
+    w-full px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-medium
+    text-sm sm:text-base
+    transition-all duration-200
+    focus:outline-none focus:ring-2 focus:ring-offset-2
     disabled:opacity-50 disabled:cursor-not-allowed
     hover:scale-[1.02] active:scale-[0.98]
     relative overflow-hidden
@@ -18,22 +19,24 @@ const AuthButton = forwardRef(({
 
   const variants = {
     primary: `
-      bg-gradient-to-r from-blue-600 to-purple-600
-      hover:from-blue-700 hover:to-purple-700
-      focus:ring-blue-500
-      shadow-lg shadow-blue-500/25
+      bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-dark-accent dark:to-purple-600
+      hover:from-indigo-700 hover:to-purple-700 dark:hover:from-dark-accent-hover dark:hover:to-purple-700
+      focus:ring-indigo-500 dark:focus:ring-dark-accent
+      text-white
+      shadow-lg shadow-indigo-500/25 dark:shadow-dark-accent/25
     `,
     secondary: `
-      bg-white/10 backdrop-blur-sm border border-white/20
-      hover:bg-white/20
-      focus:ring-white/50
-      text-white
+      bg-white dark:bg-dark-secondary border border-gray-300 dark:border-dark-border
+      hover:bg-gray-50 dark:hover:bg-dark-primary hover:border-gray-400 dark:hover:border-dark-accent/50
+      focus:ring-gray-500 dark:focus:ring-dark-accent
+      text-gray-700 dark:text-dark-text
+      shadow-sm
     `,
     outline: `
-      bg-transparent border-2 border-white/30
-      hover:bg-white/10 hover:border-white/50
-      focus:ring-white/50
-      text-white
+      bg-transparent border-2 border-gray-300 dark:border-dark-border
+      hover:bg-gray-50 dark:hover:bg-dark-secondary hover:border-gray-400 dark:hover:border-dark-accent/50
+      focus:ring-gray-500 dark:focus:ring-dark-accent
+      text-gray-700 dark:text-dark-text
     `
   };
 
@@ -44,9 +47,6 @@ const AuthButton = forwardRef(({
       disabled={loading}
       {...props}
     >
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 opacity-0 hover:opacity-100 transition-opacity duration-200"></div>
-      
       {/* Content */}
       <div className="relative flex items-center justify-center">
         {loading && (
@@ -56,9 +56,6 @@ const AuthButton = forwardRef(({
         )}
         {children}
       </div>
-      
-      {/* Shimmer effect */}
-      <div className="absolute inset-0 -top-1 -bottom-1 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
     </button>
   );
 });

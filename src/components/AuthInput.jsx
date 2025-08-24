@@ -6,21 +6,22 @@ const AuthInput = forwardRef(({
   placeholder, 
   error, 
   icon: Icon,
+  rightIcon: RightIcon,
   className = "",
   ...props 
 }, ref) => {
   return (
-    <div className={`mb-6 ${className}`}>
+    <div className={`mb-4 sm:mb-6 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-200 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
           {label}
         </label>
       )}
       
-      <div className="relative group">
+      <div className="relative">
         {Icon && (
-          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400 transition-colors duration-200">
-            <Icon className="w-5 h-5" />
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-dark-text-secondary">
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         )}
         
@@ -29,25 +30,29 @@ const AuthInput = forwardRef(({
           type={type}
           placeholder={placeholder}
           className={`
-            w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl
-            text-white placeholder-gray-400
-            backdrop-blur-sm
-            focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400
+            w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-200 dark:border-dark-border rounded-xl
+            text-sm sm:text-base text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-secondary
+            bg-white dark:bg-dark-secondary
+            focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-indigo-500 dark:focus:border-dark-accent
             transition-all duration-200
-            ${Icon ? 'pl-12' : ''}
-            ${error ? 'border-red-400 focus:ring-red-500/50' : ''}
-            hover:bg-white/15
+            ${Icon ? 'pl-9 sm:pl-10' : ''}
+            ${RightIcon ? 'pr-9 sm:pr-10' : ''}
+            ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
+            hover:border-gray-300 dark:hover:border-dark-accent/50
           `}
           {...props}
         />
         
-        {/* Glow effect on focus */}
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-focus-within:opacity-100 transition-opacity duration-200 -z-10 blur-sm"></div>
+        {RightIcon && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-dark-text-secondary">
+            {RightIcon}
+          </div>
+        )}
       </div>
       
       {error && (
-        <p className="mt-2 text-sm text-red-400 flex items-center">
-          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+        <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center">
+          <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           {error}

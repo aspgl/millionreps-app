@@ -3,18 +3,32 @@ import {
   Bell, Home, ListTodo, FileText, Star, ChevronDown,
   ClipboardList, Users, CreditCard, Clock3,
   FileCog, FolderOpen, UserCircle2, Users2, Share2, MessagesSquare,
-  Mail, Search, Sparkles, History, Trophy, X
+  Mail, Search, Sparkles, History, Trophy, X, Settings, LogOut, Brain
 } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./lib/supabase";
 import { NavLink } from "react-router-dom";
 import millionrepsLogo from "./utils/img/millionreps.svg";
+import millionrepsLogoDark from "./utils/img/logo_darktheme.svg";
 
 // ---------- UserCard ----------
 const UserCard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [profile, setProfile] = useState(null);
   const [levelTable, setLevelTable] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDropdown && !event.target.closest('.user-card-dropdown')) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDropdown]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,9 +89,23 @@ const UserCard = () => {
     return null;
   };
 
+  const handleLogout = async () => {
+    try {
+      setShowDropdown(false); // Close dropdown first
+      await signOut();
+      // User will be redirected to login page automatically
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('Fehler beim Abmelden. Bitte versuche es erneut.');
+    }
+  };
+
   return (
-    <div className="px-2 pb-3 pt-2 border-t border-gray-200">
-      <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 hover:bg-gray-50">
+    <div className="px-2 pb-3 pt-2 border-t border-gray-200 dark:border-dark-border relative user-card-dropdown">
+      <button 
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 hover:bg-gray-50 dark:hover:bg-dark-secondary"
+        onClick={() => setShowDropdown(!showDropdown)}
+      >
         {/* Fortschrittsring */}
         <svg height={radius * 2} width={radius * 2} className="shrink-0">
           <circle
@@ -112,22 +140,46 @@ const UserCard = () => {
 
         {/* Name + Rank */}
         <div className="flex-1 text-left">
-          <div className="text-sm font-medium text-gray-900 leading-5 flex items-center">
+          <div className="text-sm font-medium text-gray-900 dark:text-dark-text leading-5 flex items-center">
             {profile.firstname} {profile.lastname}
             {renderBadge()}
           </div>
-          <div className="text-xs text-gray-500 -mt-0.5">@{profile.username}</div>
+          <div className="text-xs text-gray-500 dark:text-dark-text-secondary -mt-0.5">@{profile.username}</div>
         </div>
 
-        <ChevronDown className="h-4 w-4 text-gray-500" />
+        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
       </button>
+
+      {/* Dropdown Menu */}
+      {showDropdown && (
+        <div className="absolute bottom-full left-2 right-2 mb-2 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-lg z-50">
+          <div className="p-2 space-y-1">
+            <NavLink
+              to="/settings"
+              className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-secondary rounded-lg transition-colors"
+              onClick={() => setShowDropdown(false)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Einstellungen</span>
+            </NavLink>
+            
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Abmelden</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* XP & Level */}
       <div className="text-center mt-1">
-        <div className="text-xs text-gray-700 font-medium">
+        <div className="text-xs text-gray-700 dark:text-dark-text-secondary font-medium">
           {xpCurrent} / {xpRequired} XP
         </div>
-        <div className="text-xs text-indigo-600 font-semibold">
+        <div className="text-xs text-indigo-600 dark:text-dark-accent font-semibold">
           Level {current.level}
         </div>
       </div>
@@ -143,7 +195,7 @@ const Section = ({ title, children, defaultOpen = true }) => {
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between text-xs font-medium text-gray-500 uppercase tracking-wide px-2 py-2"
+        className="flex w-full items-center justify-between text-xs font-medium text-gray-500 dark:text-dark-text-secondary uppercase tracking-wide px-2 py-2"
       >
         <span>{title}</span>
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-0" : "-rotate-90"}`} />
@@ -165,7 +217,9 @@ const NavItem = ({ to, icon: Icon, label, trailing, onClose }) => (
     }}
     className={({ isActive }) =>
       `group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
-        isActive ? "bg-gray-100 text-gray-900" : "text-gray-700 hover:bg-gray-50"
+        isActive 
+          ? "bg-gray-100 dark:bg-dark-secondary text-gray-900 dark:text-dark-text" 
+          : "text-gray-700 dark:text-dark-text-secondary hover:bg-gray-50 dark:hover:bg-dark-secondary"
       }`
     }
   >
@@ -194,7 +248,12 @@ const MillionRepsLogo = () => {
         <img 
           src={millionrepsLogo}
           alt="MillionReps" 
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain dark:hidden"
+        />
+        <img 
+          src={millionrepsLogoDark}
+          alt="MillionReps" 
+          className="h-full w-full object-contain hidden dark:block"
         />
       </div>
     </div>
@@ -217,13 +276,13 @@ const SearchBar = () => (
 // ---------- Sidebar ----------
 const Sidebar = ({ onClose }) => {
   return (
-    <aside className="flex h-[100dvh] w-[280px] flex-col rounded-r-2xl border-r border-gray-200 bg-white shadow-sm">
+    <aside className="flex h-[100dvh] w-[280px] flex-col rounded-r-2xl border-r border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-sm">
       {/* Mobile Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 p-4 lg:hidden">
+      <div className="flex items-center justify-between border-b border-gray-200 dark:border-dark-border p-4 lg:hidden">
         <MillionRepsLogo />
         <button
           onClick={onClose}
-          className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          className="rounded-lg p-2 text-gray-600 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-secondary hover:text-gray-900 dark:hover:text-dark-text"
         >
           <X className="h-5 w-5" />
         </button>
@@ -239,8 +298,9 @@ const Sidebar = ({ onClose }) => {
         {/* Hauptpunkte */}
         <NavItem to="/ai" icon={Sparkles} label="AI" trailing={<StarBadge />} onClose={onClose} />
         <NavItem to="/" icon={Home} label="Dashboard" onClose={onClose} />
+        <NavItem to="/deepwork" icon={Brain} label="Deep Work" onClose={onClose} />
         <NavItem to="/activities" icon={Bell} label="Aktivitäten" onClose={onClose} />
-        <NavItem to="/tasks" icon={ListTodo} label="Aufgaben" onClose={onClose} />
+        <NavItem to="/aufgaben" icon={ListTodo} label="Aufgaben" onClose={onClose} />
         <NavItem to="/documents" icon={FileText} label="Dokumente" onClose={onClose} />
 
         {/* Section: Workflow */}
