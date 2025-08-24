@@ -953,7 +953,7 @@ export default function DeepWorkTracker() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white dark:bg-dark-card rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+            className="bg-white dark:bg-dark-card rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -972,20 +972,20 @@ export default function DeepWorkTracker() {
             
             {/* Task Input */}
             <div className="mb-6">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
                   value={newTask}
                   onChange={(e) => setNewTask(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && addTask()}
                   placeholder="z.B. Kapitel 3 lesen, Aufgaben 1-5 lösen..."
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent transition-all"
+                  className="flex-1 px-4 py-4 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent transition-all text-base"
                 />
                 <button
                   onClick={addTask}
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-dark-accent dark:to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-2"
+                  className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-dark-accent dark:to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2 text-base font-medium"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-5 w-5" />
                   Hinzufügen
                 </button>
               </div>

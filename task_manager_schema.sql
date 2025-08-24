@@ -105,11 +105,47 @@ CREATE POLICY "Users can update own projects" ON projects FOR UPDATE USING (auth
 CREATE POLICY "Users can delete own projects" ON projects FOR DELETE USING (auth.uid() = user_id);
 
 -- Tasks RLS
+-- Enable RLS on tasks table
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own tasks" ON tasks FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own tasks" ON tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own tasks" ON tasks FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own tasks" ON tasks FOR DELETE USING (auth.uid() = user_id);
+
+-- Policy: Users can view tasks they own, are assigned to, or are assistants on
+CREATE POLICY "Users can view their tasks and collaborations" ON tasks
+FOR SELECT USING (
+  user_id = auth.uid() OR 
+  task_owner = auth.uid() OR 
+  auth.uid() = ANY(task_assistants)
+);
+
+-- Policy: Users can insert tasks
+CREATE POLICY "Users can create tasks" ON tasks
+FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- Policy: Users can update tasks they own, are assigned to, or are assistants on
+CREATE POLICY "Users can update their tasks and collaborations" ON tasks
+FOR UPDATE USING (
+  user_id = auth.uid() OR 
+  task_owner = auth.uid() OR 
+  auth.uid() = ANY(task_assistants)
+);
+
+-- Policy: Users can delete tasks they own
+CREATE POLICY "Users can delete their own tasks" ON tasks
+FOR DELETE USING (user_id = auth.uid());
+
+-- Enable RLS on profiles table
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can view all profiles (for collaboration)
+CREATE POLICY "Users can view all profiles" ON profiles
+FOR SELECT USING (true);
+
+-- Policy: Users can update their own profile
+CREATE POLICY "Users can update own profile" ON profiles
+FOR UPDATE USING (id = auth.uid());
+
+-- Policy: Users can insert their own profile
+CREATE POLICY "Users can insert own profile" ON profiles
+FOR INSERT WITH CHECK (id = auth.uid());
 
 -- Task Steps RLS
 ALTER TABLE task_steps ENABLE ROW LEVEL SECURITY;

@@ -25,7 +25,6 @@ import {
   X,
   Save,
   MoreHorizontal,
-  Grid3X3,
   List,
   BarChart3,
   Target,
@@ -34,7 +33,8 @@ import {
   Users,
   Star,
   Sparkles,
-  FileText
+  FileText,
+  UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,10 +43,13 @@ const Aufgaben = () => {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [statuses, setStatuses] = useState([]);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [userCache, setUserCache] = useState({});
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('matrix'); // 'matrix', 'kanban', 'list', 'timeline'
+  const [view, setView] = useState('kanban'); // 'kanban', 'list'
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'today', 'this_week', 'overdue', 'backlog'
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
@@ -65,7 +68,9 @@ const Aufgaben = () => {
     priority: 'medium',
     due_date: '',
     estimated_hours: '',
-    tags: []
+    tags: [],
+    task_owner: '',
+    task_assistants: []
   });
 
   const [projectForm, setProjectForm] = useState({
@@ -115,23 +120,118 @@ const Aufgaben = () => {
       
       setProjects(projectData || []);
 
+      // Load available users (for collaboration)
+      try {
+        console.log('Loading profiles for user:', user.id);
+        const { data: usersData, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, firstname, lastname, username, avatar_url')
+          .neq('id', user.id)
+          .order('firstname');
+        
+        console.log('Profiles data:', usersData);
+        console.log('Profiles error:', usersError);
+        
+        if (usersError) {
+          console.warn('Could not load profiles, using fallback:', usersError);
+          setAvailableUsers([]);
+        } else {
+          // Transform data to match expected format
+          const transformedUsers = (usersData || []).map(user => ({
+            id: user.id,
+            full_name: `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username || 'Unbekannter User',
+            avatar_url: user.avatar_url,
+            email: user.username // Using username as email fallback
+          }));
+          console.log('Transformed users:', transformedUsers);
+          setAvailableUsers(transformedUsers);
+          
+          // Create user cache for quick lookups
+          const cache = {};
+          transformedUsers.forEach(user => {
+            cache[user.id] = user;
+          });
+          
+          // Add current user to cache
+          cache[user.id] = {
+            id: user.id,
+            full_name: user.user_metadata?.full_name || 'Du',
+            avatar_url: user.user_metadata?.avatar_url,
+            email: user.email
+          };
+          
+          console.log('User cache created:', cache);
+          setUserCache(cache);
+        }
+      } catch (error) {
+        console.warn('Error loading users:', error);
+        setAvailableUsers([]);
+      }
+
       // Load tasks with related data
-      const { data: taskData } = await supabase
+      console.log('Loading tasks for user:', user.id);
+      const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .select(`
           *,
           projects(name, color, icon),
           task_statuses(name, display_name, color, icon)
         `)
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id},task_owner.eq.${user.id},task_assistants.cs.{${user.id}}`)
         .order('created_at', { ascending: false });
       
-      setTasks(taskData || []);
+      if (taskError) {
+        console.error('Error loading tasks:', taskError);
+        // Fallback: Try simple query without complex joins
+        console.log('Trying fallback query...');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+          setTasks([]);
+        } else {
+          console.log('Fallback loaded tasks:', fallbackData?.length || 0);
+          setTasks(fallbackData || []);
+        }
+      } else {
+        console.log('Loaded tasks:', taskData?.length || 0);
+        setTasks(taskData || []);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to get user data
+  const getUserData = (userId) => {
+    if (userId === user.id) {
+      return {
+        id: user.id,
+        full_name: user.user_metadata?.full_name || user.email,
+        avatar_url: user.user_metadata?.avatar_url,
+        email: user.email
+      };
+    }
+    
+    const cachedUser = userCache[userId];
+    if (cachedUser) {
+      console.log(`Found user ${userId} in cache:`, cachedUser);
+      return cachedUser;
+    }
+    
+    console.log(`User ${userId} not found in cache, returning unknown`);
+    return {
+      id: userId,
+      full_name: 'Unbekannt',
+      avatar_url: null,
+      email: 'unbekannt@example.com'
+    };
   };
 
   const loadTaskActivities = async (taskId) => {
@@ -157,16 +257,25 @@ const Aufgaben = () => {
 
       if (task && task.activities) {
         // Convert JSON activities to the same format as table activities
-        const jsonActivities = task.activities.map(activity => ({
-          id: activity.id,
-          task_id: taskId,
-          user_id: user.id,
-          activity_type: activity.type,
-          title: activity.title,
-          description: activity.description,
-          metadata: activity.data,
-          created_at: activity.timestamp
-        }));
+        const jsonActivities = task.activities.map(activity => {
+          // If user_data is missing, try to get it from userCache
+          let userData = activity.user_data;
+          if (!userData && activity.user_id) {
+            userData = getUserData(activity.user_id);
+          }
+          
+          return {
+            id: activity.id,
+            task_id: taskId,
+            user_id: activity.user_id || user.id,
+            user_data: userData, // Include user_data from JSON or fallback
+            activity_type: activity.type,
+            title: activity.title,
+            description: activity.description,
+            metadata: activity.data,
+            created_at: activity.timestamp
+          };
+        });
         
         setTaskActivities(jsonActivities);
       } else {
@@ -185,24 +294,14 @@ const Aufgaben = () => {
         .insert([{
           ...taskForm,
           user_id: user.id,
+          task_owner: taskForm.task_owner || user.id, // Default to current user if not specified
+          task_assistants: taskForm.task_assistants || [],
           status_id: taskForm.status_id || statuses.find(s => s.name === 'not_started')?.id
         }])
         .select()
         .single();
 
       if (error) throw error;
-
-      // Add activity
-      await supabase
-        .from('task_activities')
-        .insert([{
-          task_id: data.id,
-          user_id: user.id,
-          activity_type: 'task_created',
-          title: 'Task erstellt',
-          description: `Task "${taskForm.title}" wurde erstellt`,
-          metadata: { status: 'not_started' }
-        }]);
 
       setShowCreateTask(false);
       setTaskForm({
@@ -213,7 +312,9 @@ const Aufgaben = () => {
         priority: 'medium',
         due_date: '',
         estimated_hours: '',
-        tags: []
+        tags: [],
+        task_owner: '',
+        task_assistants: []
       });
       loadData();
     } catch (error) {
@@ -307,6 +408,14 @@ const Aufgaben = () => {
           title: activityForm.title,
           description: activityForm.description,
           timestamp: new Date().toISOString(),
+          user_id: user.id,
+          user_name: user.user_metadata?.full_name || user.email,
+                  user_data: {
+          id: user.id,
+          full_name: user.user_metadata?.full_name || user.email,
+          avatar_url: user.user_metadata?.avatar_url,
+          email: user.email
+        },
           data: {
             hours_spent: (isInline && inlineActivityType === 'pause') ? 0 : (parseFloat(activityForm.hours_spent) || 0),
             next_action: activityForm.next_action || null,
@@ -323,6 +432,28 @@ const Aufgaben = () => {
 
         if (activityForm.hours_spent > 0 && !(isInline && inlineActivityType === 'pause')) {
           updateData.actual_hours = (selectedTask.actual_hours || 0) + parseFloat(activityForm.hours_spent);
+        }
+
+        // Update next_action_date if provided in activity
+        if (activityForm.next_action_date) {
+          updateData.next_action_date = activityForm.next_action_date;
+        }
+
+        // Handle add_person activity
+        if (isInline && inlineActivityType === 'add_person' && activityForm.person_to_add) {
+          const personToAdd = activityForm.person_to_add;
+          const currentAssistants = selectedTask.task_assistants || [];
+          
+          // Add person to assistants if not already there
+          if (!currentAssistants.includes(personToAdd)) {
+            updateData.task_assistants = [...currentAssistants, personToAdd];
+          }
+          
+          // Update activity description
+          const personData = getUserData(personToAdd);
+          newActivity.description = `${personData.full_name} wurde zur Aufgabe hinzugefügt`;
+          newActivity.data.person_added = personToAdd;
+          newActivity.data.person_name = personData.full_name;
         }
 
         // Auto-update status based on activity type
@@ -351,6 +482,7 @@ const Aufgaben = () => {
         }
 
         console.log('Activity saved as JSON successfully');
+        console.log('New activity with user_data:', newActivity);
       } catch (jsonError) {
         console.log('JSON approach failed, trying activity table...');
         
@@ -373,12 +505,21 @@ const Aufgaben = () => {
           throw activityError;
         }
 
-        // Update task if hours were logged (but not for pause activities)
+        // Update task if hours were logged or next_action_date was set
+        const taskUpdateData = {};
+        
         if (activityForm.hours_spent > 0 && !(isInline && inlineActivityType === 'pause')) {
-          const newActualHours = (selectedTask.actual_hours || 0) + parseFloat(activityForm.hours_spent);
+          taskUpdateData.actual_hours = (selectedTask.actual_hours || 0) + parseFloat(activityForm.hours_spent);
+        }
+        
+        if (activityForm.next_action_date) {
+          taskUpdateData.next_action_date = activityForm.next_action_date;
+        }
+        
+        if (Object.keys(taskUpdateData).length > 0) {
           await supabase
             .from('tasks')
-            .update({ actual_hours: newActualHours })
+            .update(taskUpdateData)
             .eq('id', selectedTask.id);
         }
 
@@ -398,7 +539,8 @@ const Aufgaben = () => {
         description: '',
         next_action: '',
         next_action_date: '',
-        hours_spent: 0
+        hours_spent: 0,
+        person_to_add: ''
       });
 
       // Reload data
@@ -422,7 +564,34 @@ const Aufgaben = () => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesProject && matchesStatus && matchesSearch;
+    // Filter by next_action_date
+    let matchesFilter = true;
+    if (selectedFilter !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const nextActionDate = task.next_action_date ? new Date(task.next_action_date) : null;
+      
+      switch (selectedFilter) {
+        case 'today':
+          matchesFilter = nextActionDate && nextActionDate.toDateString() === today.toDateString();
+          break;
+        case 'this_week':
+          const endOfWeek = new Date(today);
+          endOfWeek.setDate(today.getDate() + 7);
+          matchesFilter = nextActionDate && nextActionDate >= today && nextActionDate <= endOfWeek;
+          break;
+        case 'overdue':
+          matchesFilter = nextActionDate && nextActionDate < today;
+          break;
+        case 'backlog':
+          matchesFilter = !nextActionDate;
+          break;
+        default:
+          matchesFilter = true;
+      }
+    }
+    
+    return matchesProject && matchesStatus && matchesSearch && matchesFilter;
   });
 
   const getStatusIcon = (statusName) => {
@@ -489,95 +658,7 @@ const Aufgaben = () => {
     }
   };
 
-  // Matrix42 View - Priority vs Status
-  const renderMatrixView = () => {
-    const priorities = ['urgent', 'high', 'medium', 'low'];
-    const matrixStatuses = ['not_started', 'in_progress', 'review', 'completed'];
 
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        {priorities.map(priority => (
-          <div key={priority} className="space-y-4">
-            <div className="text-center">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                {priority}
-              </h3>
-              <div className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getPriorityColor(priority)}`}>
-                {getPriorityIcon(priority)}
-              </div>
-            </div>
-            
-            {matrixStatuses.map(statusName => {
-              const status = statuses.find(s => s.name === statusName);
-              const tasksInCell = filteredTasks.filter(task => 
-                task.priority === priority && task.task_statuses?.name === statusName
-              );
-
-              return (
-                <motion.div
-                  key={`${priority}-${statusName}`}
-                  className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gradient-to-r ${getStatusGradient(statusName)}`}></div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                        {status?.display_name || statusName}
-                      </span>
-                    </div>
-                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium">
-                      {tasksInCell.length}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-1.5 sm:space-y-2">
-                    {tasksInCell.map(task => (
-                      <motion.div
-                        key={task.id}
-                        className="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 sm:p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                        onClick={() => {
-                          setSelectedTask(task);
-                          setShowTaskDetail(true);
-                          loadTaskActivities(task.id);
-                        }}
-                        whileHover={{ x: 4 }}
-                      >
-                        <div className="flex items-start justify-between mb-1.5 sm:mb-2">
-                          <h4 className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm line-clamp-2">
-                            {task.title}
-                          </h4>
-                        </div>
-                        
-                        {task.projects && (
-                          <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-                            <div 
-                              className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full"
-                              style={{ backgroundColor: task.projects.color }}
-                            ></div>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
-                              {task.projects.name}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {task.due_date && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                            <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            {new Date(task.due_date).toLocaleDateString('de-DE')}
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   // Enhanced Kanban View
   const renderKanbanView = () => {
@@ -618,10 +699,31 @@ const Aufgaben = () => {
                     whileHover={{ scale: 1.02, y: -2 }}
                   >
                     <div className="flex items-start justify-between mb-2 sm:mb-3">
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm line-clamp-2">
-                        {task.title}
-                      </h4>
-                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm line-clamp-2">
+                          {task.title}
+                        </h4>
+                        {/* Show task owner avatar if different from current user */}
+                        {task.task_owner && task.task_owner.id !== user.id && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {task.task_owner.avatar_url ? (
+                              <img 
+                                src={task.task_owner.avatar_url} 
+                                alt={task.task_owner.full_name}
+                                className="w-4 h-4 rounded-full"
+                              />
+                            ) : (
+                                                                                             <div className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-medium">
+                                  {getUserData(task.task_owner.id).full_name.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                                                                                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                                   {getUserData(task.task_owner.id).full_name}
+                                 </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)} ml-2`}>
                         {getPriorityIcon(task.priority)}
                       </span>
                     </div>
@@ -642,7 +744,16 @@ const Aufgaben = () => {
                       <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">
                         <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         <span className="font-medium">
-                          {new Date(task.due_date).toLocaleDateString('de-DE')}
+                          Fällig: {new Date(task.due_date).toLocaleDateString('de-DE')}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {task.next_action_date && (
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">
+                        <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        <span className="font-medium">
+                          Nächste Aktion: {new Date(task.next_action_date).toLocaleDateString('de-DE')}
                         </span>
                       </div>
                     )}
@@ -760,20 +871,6 @@ const Aufgaben = () => {
           {/* View Toggle */}
           <div className="flex flex-wrap gap-2 mt-4">
             <motion.button
-              onClick={() => setView('matrix')}
-              className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
-                view === 'matrix' 
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' 
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Grid3X3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Matrix</span>
-              <span className="sm:hidden">M</span>
-            </motion.button>
-            <motion.button
               onClick={() => setView('kanban')}
               className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
                 view === 'kanban' 
@@ -802,12 +899,85 @@ const Aufgaben = () => {
               <span className="sm:hidden">L</span>
             </motion.button>
           </div>
+
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <motion.button
+              onClick={() => setSelectedFilter('all')}
+              className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                selectedFilter === 'all' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' 
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">Alle</span>
+              <span className="sm:hidden">Alle</span>
+            </motion.button>
+            <motion.button
+              onClick={() => setSelectedFilter('today')}
+              className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                selectedFilter === 'today' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' 
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Steht heute an</span>
+              <span className="sm:hidden">Heute</span>
+            </motion.button>
+            <motion.button
+              onClick={() => setSelectedFilter('this_week')}
+              className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                selectedFilter === 'this_week' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' 
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Clock className="w-4 h-4" />
+              <span className="hidden sm:inline">Diese Woche</span>
+              <span className="sm:hidden">Woche</span>
+            </motion.button>
+            <motion.button
+              onClick={() => setSelectedFilter('overdue')}
+              className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                selectedFilter === 'overdue' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' 
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Zap className="w-4 h-4" />
+              <span className="hidden sm:inline">Überfällig</span>
+              <span className="sm:hidden">Überf.</span>
+            </motion.button>
+            <motion.button
+              onClick={() => setSelectedFilter('backlog')}
+              className={`px-3 sm:px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
+                selectedFilter === 'backlog' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' 
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Archive className="w-4 h-4" />
+              <span className="hidden sm:inline">Backlog</span>
+              <span className="sm:hidden">Backlog</span>
+            </motion.button>
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="space-y-4 sm:space-y-6">
-        {view === 'matrix' && renderMatrixView()}
         {view === 'kanban' && renderKanbanView()}
         {view === 'list' && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
@@ -830,6 +1000,9 @@ const Aufgaben = () => {
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Fällig
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Nächste Aktion
                     </th>
                     <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Zeit
@@ -888,6 +1061,9 @@ const Aufgaben = () => {
                       </td>
                       <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 dark:text-white font-medium">
                         {task.due_date ? new Date(task.due_date).toLocaleDateString('de-DE') : '-'}
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 dark:text-white font-medium">
+                        {task.next_action_date ? new Date(task.next_action_date).toLocaleDateString('de-DE') : '-'}
                       </td>
                       <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 dark:text-white font-medium">
                         {task.actual_hours || 0}h / {task.estimated_hours || 0}h
@@ -978,7 +1154,13 @@ const Aufgaben = () => {
                         {task.due_date && (
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            <span>{new Date(task.due_date).toLocaleDateString('de-DE')}</span>
+                            <span>Fällig: {new Date(task.due_date).toLocaleDateString('de-DE')}</span>
+                          </div>
+                        )}
+                        {task.next_action_date && (
+                          <div className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            <span>Nächste Aktion: {new Date(task.next_action_date).toLocaleDateString('de-DE')}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-1">
@@ -1100,6 +1282,25 @@ const Aufgaben = () => {
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   {new Date(selectedTask.created_at).toLocaleString('de-DE')}
                                 </span>
+                                {/* Show user avatar for task creation */}
+                                {(selectedTask.task_owner || selectedTask.user_id) && (
+                                  <div className="flex items-center gap-1">
+                                    {getUserData(selectedTask.task_owner || selectedTask.user_id).avatar_url ? (
+                                      <img 
+                                        src={getUserData(selectedTask.task_owner || selectedTask.user_id).avatar_url} 
+                                        alt={getUserData(selectedTask.task_owner || selectedTask.user_id).full_name}
+                                        className="w-4 h-4 rounded-full"
+                                      />
+                                    ) : (
+                                      <div className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-medium">
+                                        {getUserData(selectedTask.task_owner || selectedTask.user_id).full_name.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      von {getUserData(selectedTask.task_owner || selectedTask.user_id).full_name}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                               <p className="text-sm text-gray-600 dark:text-gray-300">
                                 Task "{selectedTask.title}" wurde erstellt
@@ -1126,6 +1327,7 @@ const Aufgaben = () => {
                                 {activity.activity_type === 'next_action' && <Flag className="w-4 h-4 text-green-600 dark:text-green-400" />}
                                 {activity.activity_type === 'comment' && <MessageSquare className="w-4 h-4 text-green-600 dark:text-green-400" />}
                                 {activity.activity_type === 'status_change' && <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />}
+                                {activity.activity_type === 'add_person' && <UserPlus className="w-4 h-4 text-orange-600 dark:text-orange-400" />}
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
@@ -1133,6 +1335,50 @@ const Aufgaben = () => {
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
                                     {new Date(activity.created_at).toLocaleString('de-DE')}
                                   </span>
+                                                                    {/* Show user avatar for activities */}
+                                  {activity.user_id && (
+                                    <>
+                                      {console.log('Activity user data:', { user_id: activity.user_id, user_data: activity.user_data })}
+                                      <div className="flex items-center gap-1">
+                                        {/* Always show the user who created the activity, not the current user */}
+                                        {activity.user_data ? (
+                                          <>
+                                            {activity.user_data.avatar_url ? (
+                                              <img 
+                                                src={activity.user_data.avatar_url} 
+                                                alt={activity.user_data.full_name}
+                                                className="w-4 h-4 rounded-full"
+                                              />
+                                            ) : (
+                                              <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-medium">
+                                                {activity.user_data.full_name.charAt(0).toUpperCase()}
+                                              </div>
+                                            )}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                              von {activity.user_data.full_name}
+                                            </span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            {getUserData(activity.user_id).avatar_url ? (
+                                              <img 
+                                                src={getUserData(activity.user_id).avatar_url} 
+                                                alt={getUserData(activity.user_id).full_name}
+                                                className="w-4 h-4 rounded-full"
+                                              />
+                                            ) : (
+                                              <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-medium">
+                                                {getUserData(activity.user_id).full_name.charAt(0).toUpperCase()}
+                                              </div>
+                                            )}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                              von {getUserData(activity.user_id).full_name}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                                   {activity.description}
@@ -1181,7 +1427,7 @@ const Aufgaben = () => {
                         </h3>
                         
                         {!showInlineActivity ? (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                             <motion.button
                               onClick={() => {
                                 setInlineActivityType('progress_update');
@@ -1261,6 +1507,27 @@ const Aufgaben = () => {
                               <MessageSquare className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                               <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Kommentar</span>
                             </motion.button>
+                            
+                            <motion.button
+                              onClick={() => {
+                                setInlineActivityType('add_person');
+                                setShowInlineActivity(true);
+                                setActivityForm({
+                                  title: '',
+                                  description: '',
+                                  next_action: '',
+                                  next_action_date: '',
+                                  hours_spent: 0,
+                                  person_to_add: ''
+                                });
+                              }}
+                              className="flex flex-col items-center gap-2 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <UserPlus className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                              <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">Person hinzufügen</span>
+                            </motion.button>
                           </div>
                         ) : (
                           <motion.div
@@ -1275,6 +1542,7 @@ const Aufgaben = () => {
                                 {inlineActivityType === 'pause' && 'Aufgabe pausieren'}
                                 {inlineActivityType === 'next_action' && 'Next Action festlegen'}
                                 {inlineActivityType === 'comment' && 'Kommentar hinzufügen'}
+                                {inlineActivityType === 'add_person' && 'Person zur Aufgabe hinzufügen'}
                               </h4>
                               <motion.button
                                 onClick={() => setShowInlineActivity(false)}
@@ -1417,6 +1685,27 @@ const Aufgaben = () => {
                                 </>
                               )}
 
+                              {inlineActivityType === 'add_person' && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <UserPlus className="w-4 h-4" />
+                                    Person auswählen
+                                  </label>
+                                  <select
+                                    value={activityForm.person_to_add}
+                                    onChange={(e) => setActivityForm({...activityForm, person_to_add: e.target.value})}
+                                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                  >
+                                    <option value="">Person auswählen...</option>
+                                    {availableUsers.map(user => (
+                                      <option key={user.id} value={user.id}>
+                                        {user.full_name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+
                               <div className="flex gap-3 pt-4">
                                 <motion.button
                                   onClick={() => setShowInlineActivity(false)}
@@ -1474,6 +1763,66 @@ const Aufgaben = () => {
                           {getPriorityIcon(selectedTask.priority)} {getPriorityText(selectedTask.priority)}
                         </div>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Collaboration Info */}
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <Users className="w-5 h-5 text-indigo-600" />
+                          Kollaboration
+                        </h3>
+                        <div className="space-y-3">
+                          {/* Task Owner */}
+                          <div className="p-3 bg-white dark:bg-gray-600 rounded-lg">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">Verantwortlicher</div>
+                            <div className="flex items-center gap-2">
+                              {getUserData(selectedTask.task_owner || user.id).avatar_url ? (
+                                <img 
+                                  src={getUserData(selectedTask.task_owner || user.id).avatar_url} 
+                                  alt={getUserData(selectedTask.task_owner || user.id).full_name}
+                                  className="w-6 h-6 rounded-full"
+                                />
+                              ) : (
+                                 <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-medium">
+                                   {getUserData(selectedTask.task_owner || user.id).full_name.charAt(0).toUpperCase()}
+                                 </div>
+                              )}
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {getUserData(selectedTask.task_owner || user.id).full_name}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Task Assistants */}
+                          {selectedTask.task_assistants && selectedTask.task_assistants.length > 0 && (
+                            <div className="p-3 bg-white dark:bg-gray-600 rounded-lg">
+                              <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">Assistenten</div>
+                              <div className="flex flex-wrap gap-2">
+                                {selectedTask.task_assistants.map((assistantId, index) => {
+                                  const assistant = getUserData(assistantId);
+                                  return (
+                                    <div key={index} className="flex items-center gap-2">
+                                      {assistant.avatar_url ? (
+                                        <img 
+                                          src={assistant.avatar_url} 
+                                          alt={assistant.full_name}
+                                          className="w-5 h-5 rounded-full"
+                                        />
+                                      ) : (
+                                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-medium">
+                                          {assistant.full_name.charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <span className="text-sm text-gray-900 dark:text-white">
+                                        {assistant.full_name}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1561,6 +1910,41 @@ const Aufgaben = () => {
                         </div>
                       )}
 
+                      {/* Next Action Date */}
+                      {selectedTask.next_action_date && (
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <Target className="w-5 h-5 text-purple-600" />
+                            Nächste Aktion
+                          </h3>
+                          <div className="p-4 bg-white dark:bg-gray-600 rounded-lg">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                {new Date(selectedTask.next_action_date).toLocaleDateString('de-DE')}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {(() => {
+                                  const nextActionDate = new Date(selectedTask.next_action_date);
+                                  const today = new Date();
+                                  const diffTime = nextActionDate - today;
+                                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                  
+                                  if (diffDays < 0) {
+                                    return <span className="text-red-500">Überfällig ({Math.abs(diffDays)} Tage)</span>;
+                                  } else if (diffDays === 0) {
+                                    return <span className="text-purple-500">Heute anstehen</span>;
+                                  } else if (diffDays === 1) {
+                                    return <span className="text-purple-500">Morgen anstehen</span>;
+                                  } else {
+                                    return <span className="text-purple-500">In {diffDays} Tagen</span>;
+                                  }
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Tags */}
                       {selectedTask.tags && selectedTask.tags.length > 0 && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
@@ -1603,7 +1987,7 @@ const Aufgaben = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-2xl shadow-2xl border border-gray-200 dark:border-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -1677,6 +2061,75 @@ const Aufgaben = () => {
                   </div>
                 </div>
 
+                {/* Collaboration Section */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Task Owner (Verantwortlicher)
+                    </label>
+                    <select
+                      value={taskForm.task_owner}
+                      onChange={(e) => setTaskForm({...taskForm, task_owner: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="">Ich selbst</option>
+                      {availableUsers.map(user => (
+                        <option key={user.id} value={user.id}>{user.full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Assistenten (Helfer) {availableUsers.length > 0 ? `(${availableUsers.length} verfügbar)` : '(keine verfügbar)'}
+                    </label>
+                    <div className="space-y-2">
+                      {availableUsers.length === 0 ? (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                          Keine anderen User verfügbar. Erstelle zuerst ein Profil in der profiles Tabelle.
+                        </div>
+                      ) : (
+                        availableUsers.map(user => (
+                        <label key={user.id} className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={taskForm.task_assistants.includes(user.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setTaskForm({
+                                  ...taskForm, 
+                                  task_assistants: [...taskForm.task_assistants, user.id]
+                                });
+                              } else {
+                                setTaskForm({
+                                  ...taskForm, 
+                                  task_assistants: taskForm.task_assistants.filter(id => id !== user.id)
+                                });
+                              }
+                            }}
+                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <div className="flex items-center gap-2">
+                            {user.avatar_url ? (
+                              <img 
+                                src={user.avatar_url} 
+                                alt={user.full_name}
+                                className="w-6 h-6 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-medium">
+                                {user.full_name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-900 dark:text-white">{user.full_name}</span>
+                          </div>
+                        </label>
+                      ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -1690,6 +2143,10 @@ const Aufgaben = () => {
                     />
                   </div>
 
+
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Geschätzte Stunden
@@ -1722,6 +2179,109 @@ const Aufgaben = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     Erstellen
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Project Creation Modal */}
+      <AnimatePresence>
+        {showCreateProject && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowCreateProject(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-2xl shadow-2xl border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Neues Projekt</h2>
+                <button
+                  onClick={() => setShowCreateProject(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Projektname
+                  </label>
+                  <input
+                    type="text"
+                    value={projectForm.name}
+                    onChange={(e) => setProjectForm({...projectForm, name: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Projektname eingeben"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Beschreibung
+                  </label>
+                  <textarea
+                    value={projectForm.description}
+                    onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    rows="3"
+                    placeholder="Projektbeschreibung (optional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Farbe
+                  </label>
+                  <div className="grid grid-cols-6 gap-3">
+                    {[
+                      '#6366f1', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
+                      '#8b5cf6', '#ec4899', '#84cc16', '#f59e0b', '#10b981', '#3b82f6'
+                    ].map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setProjectForm({...projectForm, color})}
+                        className={`w-12 h-12 rounded-xl border-2 transition-all ${
+                          projectForm.color === color 
+                            ? 'border-gray-900 dark:border-white scale-110' 
+                            : 'border-gray-300 dark:border-gray-600 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-6">
+                  <motion.button
+                    onClick={() => setShowCreateProject(false)}
+                    className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Abbrechen
+                  </motion.button>
+                  <motion.button
+                    onClick={createProject}
+                    disabled={!projectForm.name}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium shadow-lg"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Projekt erstellen
                   </motion.button>
                 </div>
               </div>
