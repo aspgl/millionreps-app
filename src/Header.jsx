@@ -40,7 +40,10 @@ export default function Header({ onMenuClick }) {
 
         {organization ? (
           <>
-            <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-dark-accent/10 rounded-lg border border-indigo-200 dark:border-dark-accent/20">
+            <div 
+              onClick={() => navigate("/organization")}
+              className="flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-dark-accent/10 rounded-lg border border-indigo-200 dark:border-dark-accent/20 cursor-pointer hover:bg-indigo-100 dark:hover:bg-dark-accent/20 transition-colors"
+            >
               <Building2 className="h-4 w-4 text-indigo-600 dark:text-dark-accent" />
               <span className="text-sm font-medium text-indigo-700 dark:text-dark-accent">{organization}</span>
             </div>

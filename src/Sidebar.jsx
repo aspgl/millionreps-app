@@ -325,6 +325,7 @@ const Sidebar = ({ onClose }) => {
         <Section title="Contacts" defaultOpen>
           <div className="space-y-1">
             <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" onClose={onClose} />
+            <NavItem to="/network" icon={Users2} label="Netzwerk" onClose={onClose} />
             <NavItem to="/grantees" icon={UserCircle2} label="Grantees" onClose={onClose} />
             <NavItem to="/individuals" icon={Users2} label="Individuals" onClose={onClose} />
             <NavItem to="/constituents" icon={Share2} label="Constituents" onClose={onClose} />

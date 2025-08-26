@@ -13,6 +13,8 @@ import Activities from "./Activities"; // 👈 neu importiert
 import MeineHistorie from "./MeineHistorie";
 import AI from "./AI";
 import Leaderboard from "./Leaderboard";
+import Network from "./Network";
+import Organization from "./Organization";
 import DeepWorkTracker from "./DeepWorkTracker";
 import Aufgaben from "./Aufgaben";
 import "./index.css";
@@ -40,6 +42,8 @@ function ProtectedAppRoutes() {
         <Route path="meine-historie" element={<MeineHistorie />} /> {/* 👈 neue Seite */}
         <Route path="ai" element={<AI />} /> {/* 👈 neue Seite */}
         <Route path="leaderboard" element={<Leaderboard />} />
+        <Route path="network" element={<Network />} />
+        <Route path="organization" element={<Organization />} />
         <Route path="deepwork" element={<DeepWorkTracker />} />
         <Route path="aufgaben" element={<Aufgaben />} />
       </Route>

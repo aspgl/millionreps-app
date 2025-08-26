@@ -452,7 +452,7 @@ export default function Settings() {
           {activeTab === "profile" && (
             <div className="space-y-6">
               {/* Profile Card */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-6">
                 <div className="flex items-center gap-6 mb-6">
                   <div className="relative">
                     <img
@@ -473,19 +473,19 @@ export default function Settings() {
                     </button>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text">
                       {form.firstname} {form.lastname}
                     </h2>
-                    <p className="text-gray-600">@{form.username}</p>
+                    <p className="text-gray-600 dark:text-dark-text-secondary">@{form.username}</p>
                     {profile && (
                       <div className="flex items-center gap-4 mt-2">
                         <div className="flex items-center gap-2 text-sm">
                           <Trophy className="h-4 w-4 text-yellow-500" />
-                          <span>Level {profile.level || 1}</span>
+                          <span className="text-gray-700 dark:text-dark-text">Level {profile.level || 1}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Star className="h-4 w-4 text-indigo-500" />
-                          <span>{profile.xp || 0} XP</span>
+                          <span className="text-gray-700 dark:text-dark-text">{profile.xp || 0} XP</span>
                         </div>
                       </div>
                     )}
@@ -556,7 +556,7 @@ export default function Settings() {
                       </p>
                     )}
                     <div className="flex items-center gap-4">
-                      <label className="cursor-pointer bg-gray-100 dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-dark-primary px-6 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                      <label className="cursor-pointer bg-gray-100 dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-dark-primary px-6 py-3 rounded-xl text-sm font-medium text-gray-700 dark:text-dark-text transition-colors flex items-center gap-2">
                         <input
                           type="file"
                           accept="image/*"
@@ -608,17 +608,17 @@ export default function Settings() {
 
                 {/* New Goal Form */}
                 {showNewGoalForm && (
-                  <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Neues Ziel erstellen</h3>
+                  <div className="bg-gray-50 dark:bg-dark-secondary rounded-xl p-6 mb-6">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-dark-text">Neues Ziel erstellen</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                           Zieltyp
                         </label>
                         <select
                           value={newGoal.goal_type}
                           onChange={(e) => setNewGoal({...newGoal, goal_type: e.target.value})}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent"
                         >
                           <option value="weekly_study_time">Wöchentliche Lernzeit</option>
                           <option value="weekly_exams">Prüfungen pro Woche</option>
@@ -627,25 +627,25 @@ export default function Settings() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                           Zielwert
                         </label>
                         <input
                           type="number"
                           value={newGoal.target_value}
                           onChange={(e) => setNewGoal({...newGoal, target_value: parseInt(e.target.value)})}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent"
                           placeholder="10"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-2">
                           Zeitraum
                         </label>
                         <select
                           value={newGoal.period}
                           onChange={(e) => setNewGoal({...newGoal, period: e.target.value})}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent"
                         >
                           <option value="weekly">Wöchentlich</option>
                           <option value="monthly">Monatlich</option>
@@ -662,7 +662,7 @@ export default function Settings() {
                       </button>
                       <button
                         onClick={() => setShowNewGoalForm(false)}
-                        className="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl hover:bg-gray-300 transition-all"
+                        className="bg-gray-200 dark:bg-dark-secondary text-gray-700 dark:text-dark-text px-6 py-2 rounded-xl hover:bg-gray-300 dark:hover:bg-dark-primary transition-all"
                       >
                         Abbrechen
                       </button>
@@ -677,17 +677,17 @@ export default function Settings() {
                     const progress = Math.min((goal.current_value / goal.target_value) * 100, 100);
                     
                     return (
-                      <div key={goal.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
+                      <div key={goal.id} className="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl p-6 hover:shadow-md transition-all">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
+                            <div className="p-3 bg-indigo-100 dark:bg-dark-accent/10 text-indigo-600 dark:text-dark-accent rounded-xl">
                               <Icon className="h-6 w-6" />
                             </div>
                             <div>
-                              <h3 className="font-semibold text-gray-900">
+                              <h3 className="font-semibold text-gray-900 dark:text-dark-text">
                                 {getGoalLabel(goal.goal_type)}
                               </h3>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
                                 {goal.target_value} {getGoalUnit(goal.goal_type)} • {goal.period === 'weekly' ? 'Wöchentlich' : goal.period === 'monthly' ? 'Monatlich' : 'Jährlich'}
                               </p>
                             </div>

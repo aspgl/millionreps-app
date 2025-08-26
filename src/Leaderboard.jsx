@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./lib/supabase";
 import { 
@@ -33,12 +33,27 @@ export default function Leaderboard() {
     topStreak: 0
   });
 
+  // helper: compute date range for filters
+  const filterFromDate = useMemo(() => {
+    if (timeFilter === "week") {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      return d.toISOString();
+    }
+    if (timeFilter === "month") {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 1);
+      return d.toISOString();
+    }
+    return null;
+  }, [timeFilter]);
+
   // Fetch real data from Supabase
   const fetchLeaderboardData = async () => {
     try {
       setLoading(true);
 
-      // 1. Fetch all profiles with XP and level data
+      // 1. Fetch all profiles with XP and base data
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select(`
@@ -56,8 +71,16 @@ export default function Leaderboard() {
 
       if (profilesError) throw profilesError;
 
-      // 2. Fetch exam activities for each user
-      const { data: examActivities, error: activitiesError } = await supabase
+      // 2. Fetch level progression thresholds
+      const { data: levelRows, error: levelError } = await supabase
+        .from("level_progression")
+        .select("level,xp_required")
+        .order("level", { ascending: true });
+
+      if (levelError) throw levelError;
+
+      // 3. Fetch exam activities (all-time for correct streak calculation)
+      let activitiesQuery = supabase
         .from("exam_activity")
         .select(`
           id,
@@ -68,12 +91,60 @@ export default function Leaderboard() {
           total_questions,
           duration_seconds
         `);
+      const { data: examActivities, error: activitiesError } = await activitiesQuery;
 
       if (activitiesError) throw activitiesError;
 
-      // 3. Calculate statistics for each user
+      // helper: compute daily streak from a set of activity dates
+      const computeDailyStreak = (dates) => {
+        if (!dates || dates.size === 0) return 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // normalize helper
+        const fmt = (d) => d.toISOString().slice(0, 10);
+
+        const hasDate = (d) => dates.has(fmt(d));
+
+        // pick starting day: today if has activity today, else yesterday if has activity yesterday, else 0
+        const start = new Date(today);
+        if (!hasDate(start)) {
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          if (!hasDate(yesterday)) return 0;
+          start.setDate(start.getDate() - 1);
+        }
+
+        let streak = 0;
+        const cursor = new Date(start);
+        while (hasDate(cursor)) {
+          streak += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+        return streak;
+      };
+
+      // utility: compute level from XP using thresholds
+      const computeLevelFromXp = (xpValue) => {
+        if (!levelRows || levelRows.length === 0) return 1;
+        const xp = xpValue || 0;
+        let currentLevel = 1;
+        for (const row of levelRows) {
+          if (xp >= row.xp_required) {
+            currentLevel = row.level;
+          } else {
+            break;
+          }
+        }
+        return currentLevel;
+      };
+
+      // 4. Calculate statistics for each user
       const userStats = profiles.map((profile, index) => {
-        const userActivities = examActivities.filter(activity => activity.user_id === profile.id);
+        const allUserActivities = examActivities.filter(activity => activity.user_id === profile.id);
+        const userActivities = filterFromDate
+          ? allUserActivities.filter(a => a.finished_at && new Date(a.finished_at) >= new Date(filterFromDate))
+          : allUserActivities;
         
         // Calculate exams completed
         const examsCompleted = userActivities.length;
@@ -86,21 +157,16 @@ export default function Leaderboard() {
         // Calculate total study time (in hours)
         const totalStudyTime = Math.round(userActivities.reduce((sum, activity) => sum + (activity.duration_seconds || 0), 0) / 3600);
         
-        // Calculate current streak (simplified - based on recent activity)
-        const recentActivities = userActivities
-          .filter(activity => activity.finished_at)
-          .sort((a, b) => new Date(b.finished_at) - new Date(a.finished_at));
-        
-        let currentStreak = 0;
-        if (recentActivities.length > 0) {
-          const today = new Date();
-          const lastActivity = new Date(recentActivities[0].finished_at);
-          const daysDiff = Math.floor((today - lastActivity) / (1000 * 60 * 60 * 24));
-          currentStreak = daysDiff <= 1 ? recentActivities.length : 0;
-        }
+        // Calculate current streak (consecutive daily activity, all-time)
+        const daySet = new Set(
+          allUserActivities
+            .filter(a => a.finished_at)
+            .map(a => new Date(a.finished_at).toISOString().slice(0, 10))
+        );
+        const currentStreak = computeDailyStreak(daySet);
 
-        // Calculate level based on XP
-        const level = Math.floor((profile.xp || 0) / 100) + 1;
+        // Calculate level based on XP and level_progression table
+        const level = computeLevelFromXp(profile.xp || 0);
 
         // Generate badges based on achievements
         const badges = [];
@@ -133,15 +199,17 @@ export default function Leaderboard() {
         };
       });
 
-      // 4. Calculate overall stats
+      // 5. Calculate overall stats
       const totalUsers = profiles.length;
-      const avgXP = Math.round(profiles.reduce((sum, p) => sum + (p.xp || 0), 0) / profiles.length);
-      const topStreak = Math.max(...userStats.map(u => u.current_streak));
+      const avgXP = profiles.length > 0
+        ? Math.round(profiles.reduce((sum, p) => sum + (p.xp || 0), 0) / profiles.length)
+        : 0;
+      const topStreak = userStats.length > 0 ? Math.max(...userStats.map(u => u.current_streak)) : 0;
 
       setLeaderboardData(userStats);
       setStats({ totalUsers, avgXP, topStreak });
 
-      // 5. Set current user
+      // 6. Set current user
       const currentUserData = userStats.find(u => u.id === user?.id);
       setCurrentUser(currentUserData);
       setUserRank(currentUserData ? currentUserData.rank : null);
@@ -159,7 +227,7 @@ export default function Leaderboard() {
     if (user) {
       fetchLeaderboardData();
     }
-  }, [user, timeFilter]);
+  }, [user, timeFilter, filterFromDate]);
 
   const getRankIcon = (rank) => {
     switch (rank) {
@@ -235,21 +303,21 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div className="min-w-0">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">🏆 Leaderboard</h1>
             <p className="text-gray-600">Vergleiche dich mit anderen Lernenden</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+            <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2 w-full sm:w-auto">
               <Search className="h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Suche nach Benutzern..."
-                className="outline-none text-sm"
+                className="outline-none text-sm w-full sm:w-48"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -269,14 +337,14 @@ export default function Leaderboard() {
 
         {/* Current User Stats */}
         {currentUser && (
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 sm:p-6 text-white mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4 min-w-0">
                 <div className="relative">
                   <img
                     src={currentUser.avatar_url}
                     alt={currentUser.firstname}
-                    className="h-16 w-16 rounded-full border-4 border-white/20"
+                    className="h-14 w-14 sm:h-16 sm:w-16 rounded-full border-4 border-white/20"
                   />
                   {userRank <= 3 && (
                     <div className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full p-1">
@@ -284,7 +352,7 @@ export default function Leaderboard() {
                     </div>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="text-xl font-bold">
                     {currentUser.firstname} {currentUser.lastname}
                   </h2>
@@ -293,7 +361,7 @@ export default function Leaderboard() {
                   </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <div className="text-2xl font-bold">{currentUser.xp} XP</div>
                 <div className="text-indigo-100">Gesamt</div>
               </div>
@@ -317,14 +385,14 @@ export default function Leaderboard() {
                   user.rank <= 3 ? "bg-gradient-to-r from-yellow-50 to-orange-50" : ""
                 }`}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                   {/* Rank */}
                   <div className="flex items-center justify-center w-12 h-12">
                     {getRankIcon(user.rank)}
                   </div>
 
                   {/* Avatar & Name */}
-                  <div className="flex items-center gap-4 flex-1">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
                     <img
                       src={user.avatar_url}
                       alt={user.firstname}
@@ -338,8 +406,8 @@ export default function Leaderboard() {
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center gap-6">
+                  {/* Stats (desktop) */}
+                  <div className="hidden md:flex items-center gap-6">
                     <div className="text-center">
                       <div className="text-lg font-bold text-gray-900">{user.xp}</div>
                       <div className="text-xs text-gray-500">XP</div>
@@ -362,13 +430,22 @@ export default function Leaderboard() {
                     </div>
                   </div>
 
+                  {/* Stats (mobile compact) */}
+                  <div className="flex md:hidden w-full justify-between text-sm text-gray-700 mt-3">
+                    <div>XP: <span className="font-semibold">{user.xp}</span></div>
+                    <div>Lvl: <span className="font-semibold">{user.level}</span></div>
+                    <div>Prüf.: <span className="font-semibold">{user.exams_completed}</span></div>
+                    <div>Ø: <span className="font-semibold">{user.avg_score}%</span></div>
+                    <div>Streak: <span className="font-semibold">{user.current_streak}</span></div>
+                  </div>
+
                   {/* Trend */}
-                  <div className="flex items-center gap-2">
+                  <div className="hidden md:flex items-center gap-2">
                     {getTrendIcon(user.trend)}
                   </div>
 
                   {/* Badges */}
-                  <div className="flex items-center gap-1">
+                  <div className="hidden md:flex items-center gap-1">
                     {user.badges.slice(0, 3).map((badge, badgeIndex) => (
                       <div
                         key={badgeIndex}
@@ -396,7 +473,7 @@ export default function Leaderboard() {
       </div>
 
       {/* Stats Overview */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-100 rounded-lg">
