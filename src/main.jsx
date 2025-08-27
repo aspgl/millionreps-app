@@ -17,6 +17,8 @@ import Network from "./Network";
 import Organization from "./Organization";
 import DeepWorkTracker from "./DeepWorkTracker";
 import Aufgaben from "./Aufgaben";
+import GoalTracker from "./GoalTracker";
+import Kalender from "./Kalender";
 import "./index.css";
 import {
   BrowserRouter as Router,
@@ -46,6 +48,8 @@ function ProtectedAppRoutes() {
         <Route path="organization" element={<Organization />} />
         <Route path="deepwork" element={<DeepWorkTracker />} />
         <Route path="aufgaben" element={<Aufgaben />} />
+        <Route path="goals" element={<GoalTracker />} />
+        <Route path="kalender" element={<Kalender />} />
       </Route>
 
       {/* Fallback */}

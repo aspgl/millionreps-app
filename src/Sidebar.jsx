@@ -3,7 +3,7 @@ import {
   Bell, Home, ListTodo, FileText, Star, ChevronDown,
   ClipboardList, Users, CreditCard, Clock3,
   FileCog, FolderOpen, UserCircle2, Users2, Share2, MessagesSquare,
-  Mail, Search, Sparkles, History, Trophy, X, Settings, LogOut, Brain
+  Mail, Search, Sparkles, History, Trophy, X, Settings, LogOut, Brain, Target, Calendar
 } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "./lib/supabase";
@@ -299,6 +299,8 @@ const Sidebar = ({ onClose }) => {
         <NavItem to="/ai" icon={Sparkles} label="AI" trailing={<StarBadge />} onClose={onClose} />
         <NavItem to="/" icon={Home} label="Dashboard" onClose={onClose} />
         <NavItem to="/deepwork" icon={Brain} label="Deep Work" onClose={onClose} />
+        <NavItem to="/goals" icon={Target} label="Ziele" onClose={onClose} />
+        <NavItem to="/kalender" icon={Calendar} label="Kalender" onClose={onClose} />
         <NavItem to="/activities" icon={Bell} label="Aktivitäten" onClose={onClose} />
         <NavItem to="/aufgaben" icon={ListTodo} label="Aufgaben" onClose={onClose} />
         <NavItem to="/documents" icon={FileText} label="Dokumente" onClose={onClose} />

@@ -14,6 +14,7 @@ import {
   Folder,
   Tag,
   Plus,
+  Share2,
 } from "lucide-react";
 import SharePopup from "./components/SharePopup";
 
@@ -209,13 +210,13 @@ export default function MeineLerninhalte() {
         />
       )}
       {/* Library Hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-50 via-purple-50 to-white">
+      <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-dark-border bg-gradient-to-br from-indigo-50 via-purple-50 to-white dark:from-indigo-900/10 dark:via-purple-900/10 dark:to-dark-card">
         <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-indigo-400/20 to-purple-400/20 blur-3xl" />
         <div className="relative p-6 sm:p-8">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">Meine Bibliothek</h1>
-              <p className="text-gray-600 mt-1">Organisiere, teile und übe deine Lerninhalte</p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-dark-text">Meine Bibliothek</h1>
+              <p className="text-gray-600 dark:text-dark-text-secondary mt-1">Organisiere, teile und übe deine Lerninhalte</p>
             </div>
             <button
               onClick={() => navigate("/klausur")}
@@ -226,21 +227,21 @@ export default function MeineLerninhalte() {
           </div>
 
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Klausuren</div>
-              <div className="text-3xl font-extrabold text-indigo-600">{totalExams}</div>
+            <div className="rounded-xl bg-white dark:bg-dark-card shadow-sm border border-gray-200 dark:border-dark-border p-4 text-center">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-text-secondary">Klausuren</div>
+              <div className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{totalExams}</div>
             </div>
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Versuche</div>
-              <div className="text-3xl font-extrabold text-green-600">{totalAttempts}</div>
+            <div className="rounded-xl bg-white dark:bg-dark-card shadow-sm border border-gray-200 dark:border-dark-border p-4 text-center">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-text-secondary">Versuche</div>
+              <div className="text-3xl font-extrabold text-green-600 dark:text-green-400">{totalAttempts}</div>
             </div>
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Ø Punkte</div>
-              <div className="text-3xl font-extrabold text-orange-600">{avgScore}</div>
+            <div className="rounded-xl bg-white dark:bg-dark-card shadow-sm border border-gray-200 dark:border-dark-border p-4 text-center">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-text-secondary">Ø Punkte</div>
+              <div className="text-3xl font-extrabold text-orange-600 dark:text-orange-400">{avgScore}</div>
             </div>
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Kollektionen</div>
-              <div className="text-3xl font-extrabold text-purple-600">{collections.length}</div>
+            <div className="rounded-xl bg-white dark:bg-dark-card shadow-sm border border-gray-200 dark:border-dark-border p-4 text-center">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-text-secondary">Kollektionen</div>
+              <div className="text-3xl font-extrabold text-purple-600 dark:text-purple-400">{collections.length}</div>
             </div>
           </div>
 
@@ -248,13 +249,13 @@ export default function MeineLerninhalte() {
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="col-span-1 md:col-span-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-dark-text-secondary" />
                 <input
                   type="text"
                   placeholder="Inhalte, Beschreibungen, Tags suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-dark-text-secondary focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent"
                 />
               </div>
             </div>
@@ -262,7 +263,7 @@ export default function MeineLerninhalte() {
               <select
                 value={selectedCollection}
                 onChange={(e) => setSelectedCollection(e.target.value)}
-                className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent"
               >
                 <option value="">Alle Kollektionen</option>
                 {collections.map((collection) => (
@@ -276,7 +277,7 @@ export default function MeineLerninhalte() {
               <select
                 value={selectedTags[0] || ""}
                 onChange={(e) => setSelectedTags(e.target.value ? [e.target.value] : [])}
-                className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-3 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-secondary text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-indigo-500 dark:focus:ring-dark-accent focus:border-transparent"
               >
                 <option value="">Alle Tags</option>
                 {tags.map((tag) => (
@@ -292,75 +293,108 @@ export default function MeineLerninhalte() {
 
       {/* Content as carousels */}
       {Object.entries(groupedByCollection).map(([collectionName, collectionExams]) => (
-        <div key={collectionName} className="space-y-3">
+        <div key={collectionName} className="space-y-4">
           <div className="flex items-center justify-between pr-1">
-            <h2 className="text-xl font-bold flex items-center gap-2">
+            <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-dark-text">
               <Folder className="h-5 w-5 text-indigo-600" />
               {collectionName}
             </h2>
-            <div className="text-xs text-gray-500">{collectionExams.length} Inhalte</div>
+            <div className="text-xs text-gray-500 dark:text-dark-text-secondary">{collectionExams.length} Inhalte</div>
           </div>
           <div className="relative">
-            <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+            <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
               {collectionExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="snap-start group relative min-w-[280px] sm:min-w-[320px] rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-xl transition-all"
+                  className="snap-start group relative min-w-[300px] sm:min-w-[340px] rounded-2xl overflow-hidden border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                 >
                   {/* Poster/Preview */}
-                  <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200 relative">
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+                  <div className="h-48 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10" />
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Floating Action Buttons */}
+                    <div className="absolute top-3 right-3 z-10 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <button
                         onClick={() => setShareExam(exam)}
-                        className="px-2 py-1 text-xs rounded-full bg-white/90 text-gray-800 hover:bg-white"
+                        className="p-2 rounded-full bg-white/90 backdrop-blur-sm text-gray-800 hover:bg-white shadow-lg hover:scale-110 transition-all"
                       >
-                        Teilen
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => navigate(`/klausur?id=${exam.id}`)}
+                        className="p-2 rounded-full bg-white/90 backdrop-blur-sm text-gray-800 hover:bg-white shadow-lg hover:scale-110 transition-all"
+                      >
+                        <Edit3 className="h-4 w-4" />
                       </button>
                     </div>
-                    <div className="absolute bottom-2 left-3 z-10 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="text-sm">{exam.stats.questions} Fragen • {exam.stats.attempts} Versuche</div>
-                      <div className="text-xs text-white/80">Ø {exam.stats.avgPoints} Punkte</div>
+
+                    {/* Stats Overlay */}
+                    <div className="absolute bottom-3 left-3 z-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="flex items-center gap-4 text-sm font-medium">
+                        <div className="flex items-center gap-1">
+                          <ListChecks className="h-4 w-4" />
+                          {exam.stats.questions} Fragen
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Trophy className="h-4 w-4" />
+                          {exam.stats.attempts} Versuche
+                        </div>
+                      </div>
+                      <div className="text-xs text-white/90 mt-1">Ø {exam.stats.avgPoints} Punkte</div>
+                    </div>
+
+                    {/* Animated Background Pattern */}
+                    <div className="absolute inset-0 opacity-20">
+                      <div className="absolute top-4 right-4 w-16 h-16 bg-indigo-400/30 rounded-full blur-xl animate-pulse" />
+                      <div className="absolute bottom-8 left-8 w-12 h-12 bg-purple-400/30 rounded-full blur-lg animate-pulse delay-1000" />
                     </div>
                   </div>
+
                   {/* Body */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-semibold text-gray-900 line-clamp-2">{exam.title}</h3>
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h3 className="font-bold text-gray-900 dark:text-dark-text line-clamp-2 text-lg leading-tight">{exam.title}</h3>
                       {exam.collection_id && (
-                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] rounded-full whitespace-nowrap h-fit">
+                        <span className="px-3 py-1 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium rounded-full whitespace-nowrap h-fit">
                           {collectionName}
                         </span>
                       )}
                     </div>
+
+                    {/* Description */}
+                    {exam.description && (
+                      <p className="text-sm text-gray-600 dark:text-dark-text-secondary line-clamp-2 mb-3">
+                        {exam.description}
+                      </p>
+                    )}
+
+                    {/* Tags */}
                     {exam.tag_ids && exam.tag_ids.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {exam.tag_ids.slice(0,3).map(tagId => {
                           const tag = tags.find(t => t.id === tagId);
                           return tag ? (
-                            <span key={tagId} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full">
+                            <span key={tagId} className="px-3 py-1 bg-gray-100 dark:bg-dark-secondary text-gray-700 dark:text-dark-text text-xs rounded-full font-medium">
                               #{tag.tag_name}
                             </span>
                           ) : null;
                         })}
                         {exam.tag_ids.length > 3 && (
-                          <span className="px-2 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded-full">+{exam.tag_ids.length-3}</span>
+                          <span className="px-3 py-1 bg-gray-50 dark:bg-dark-primary text-gray-500 dark:text-dark-text-secondary text-xs rounded-full">
+                            +{exam.tag_ids.length-3}
+                          </span>
                         )}
                       </div>
                     )}
+
                     {/* Actions */}
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => navigate(`/klausur/ueben/${exam.id}`)}
-                        className="flex-1 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
                       >
-                        <BookOpen className="h-4 w-4" /> Üben
-                      </button>
-                      <button
-                        onClick={() => navigate(`/klausur?id=${exam.id}`)}
-                        className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200 flex items-center justify-center gap-2"
-                      >
-                        <Edit3 className="h-4 w-4" /> Edit
+                        <BookOpen className="h-4 w-4" /> Jetzt üben
                       </button>
                     </div>
                   </div>
@@ -373,45 +407,78 @@ export default function MeineLerninhalte() {
 
       {/* Shared with me */}
       {filteredShared.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xl font-bold flex items-center gap-2">
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-dark-text">
             <Folder className="h-5 w-5 text-purple-600" />
             Mit mir geteilt
           </h2>
-          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+          <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
             {filteredShared.map((exam) => (
               <div
                 key={exam.id}
-                className="snap-start group relative min-w-[280px] sm:min-w-[320px] rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-xl transition-all"
+                className="snap-start group relative min-w-[300px] sm:min-w-[340px] rounded-2xl overflow-hidden border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="h-40 bg-gradient-to-br from-purple-100 to-purple-200 relative">
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/60 to-transparent" />
-                  <span className="absolute top-2 right-2 z-10 px-2 py-1 text-xs rounded-full bg-white/90 text-purple-700">Geteilt</span>
-                  <div className="absolute bottom-2 left-3 z-10 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="text-sm">{exam.stats.questions} Fragen • {exam.stats.attempts} Versuche</div>
-                    <div className="text-xs text-white/80">Ø {exam.stats.avgPoints}%</div>
+                <div className="h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-rose-100 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-rose-900/20 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-rose-500/10" />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  
+                  {/* Shared Badge */}
+                  <span className="absolute top-3 left-3 z-10 px-3 py-1 text-xs rounded-full bg-white/90 backdrop-blur-sm text-purple-700 font-medium shadow-lg">
+                    Geteilt
+                  </span>
+
+                  {/* Stats Overlay */}
+                  <div className="absolute bottom-3 left-3 z-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="flex items-center gap-4 text-sm font-medium">
+                      <div className="flex items-center gap-1">
+                        <ListChecks className="h-4 w-4" />
+                        {exam.stats.questions} Fragen
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Trophy className="h-4 w-4" />
+                        {exam.stats.attempts} Versuche
+                      </div>
+                    </div>
+                    <div className="text-xs text-white/90 mt-1">Ø {exam.stats.avgPoints} Punkte</div>
+                  </div>
+
+                  {/* Animated Background Pattern */}
+                  <div className="absolute inset-0 opacity-20">
+                    <div className="absolute top-4 right-4 w-16 h-16 bg-purple-400/30 rounded-full blur-xl animate-pulse" />
+                    <div className="absolute bottom-8 left-8 w-12 h-12 bg-pink-400/30 rounded-full blur-lg animate-pulse delay-1000" />
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 line-clamp-2">{exam.title}</h3>
+
+                <div className="p-5">
+                  <h3 className="font-bold text-gray-900 dark:text-dark-text line-clamp-2 text-lg leading-tight mb-3">{exam.title}</h3>
+                  
+                  {/* Description */}
+                  {exam.description && (
+                    <p className="text-sm text-gray-600 dark:text-dark-text-secondary line-clamp-2 mb-3">
+                      {exam.description}
+                    </p>
+                  )}
+
+                  {/* Tags */}
                   {exam.tag_ids && exam.tag_ids.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {exam.tag_ids.slice(0,3).map(tagId => (
-                        <span key={tagId} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full">
-                          #{tagId}
-                        </span>
-                      ))}
-                      {exam.tag_ids.length > 3 && (
-                        <span className="px-2 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded-full">+{exam.tag_ids.length-3}</span>
-                      )}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {exam.tag_ids.slice(0,3).map(tagId => {
+                        const tag = tags.find(t => t.id === tagId);
+                        return tag ? (
+                          <span key={tagId} className="px-3 py-1 bg-gray-100 dark:bg-dark-secondary text-gray-700 dark:text-dark-text text-xs rounded-full font-medium">
+                            #{tag.tag_name}
+                          </span>
+                        ) : null;
+                      })}
                     </div>
                   )}
-                  <div className="mt-3 flex items-center justify-end">
+
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => navigate(`/klausur/ueben/${exam.id}`)}
-                      className="px-3 py-2 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700"
+                      className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
                     >
-                      Üben
+                      <BookOpen className="h-4 w-4" /> Jetzt üben
                     </button>
                   </div>
                 </div>
