@@ -84,7 +84,7 @@ export default function Dashboard() {
         // Fetch user profile
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("xp, level, firstname, lastname, avatar_url")
+          .select("xp, firstname, lastname, avatar_url")
           .eq("id", user.id)
           .single();
 
@@ -150,13 +150,24 @@ export default function Dashboard() {
         if (error) throw error;
         setActivities(activitiesData || []);
 
-        // Fetch user goals
-        const { data: goalsData } = await supabase
-          .from("user_goals")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
+        // Fetch user goals (with fallback)
+        let goalsData = [];
+        try {
+          const { data, error: goalsError } = await supabase
+            .from("user_goals")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false });
+          
+          if (!goalsError) {
+            goalsData = data || [];
+          } else {
+            console.warn("user_goals table not available:", goalsError.message);
+          }
+        } catch (goalError) {
+          console.warn("Goals feature not available:", goalError.message);
+        }
 
         // Update goals with current values based on activities
         if (goalsData && activitiesData) {
@@ -230,13 +241,17 @@ export default function Dashboard() {
           console.log("Updated goals with current values:", updatedGoals);
           setUserGoals(updatedGoals);
           
-          // Update goals in database
+          // Update goals in database (with error handling)
           for (const goal of updatedGoals) {
             if (goal.current_value !== goal.current_value) {
-              await supabase
-                .from("user_goals")
-                .update({ current_value: goal.current_value })
-                .eq("id", goal.id);
+              try {
+                await supabase
+                  .from("user_goals")
+                  .update({ current_value: goal.current_value })
+                  .eq("id", goal.id);
+              } catch (updateError) {
+                console.warn("Failed to update goal:", updateError.message);
+              }
             }
           }
         } else {
@@ -266,9 +281,9 @@ export default function Dashboard() {
           currentStreak = daysDiff <= 1 ? sortedActivities.length : 0;
         }
 
-        // Berechne Level basierend auf XP (falls nicht in der Datenbank gespeichert)
-        const calculatedLevel = profileData?.level || Math.floor((profileData?.xp || 0) / 100) + 1;
+        // Berechne Level basierend auf XP
         const currentXP = profileData?.xp || 0;
+        const calculatedLevel = Math.floor(currentXP / 100) + 1;
         
         console.log("Setting stats with:", {
           totalXP: currentXP,

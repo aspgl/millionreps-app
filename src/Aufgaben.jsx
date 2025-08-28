@@ -155,7 +155,7 @@ const Aufgaben = () => {
           // Add current user to cache
           cache[user.id] = {
             id: user.id,
-            full_name: user.user_metadata?.full_name || 'Du',
+            full_name: user.user_metadata?.full_name || user.email || 'Du',
             avatar_url: user.user_metadata?.avatar_url,
             email: user.email
           };
@@ -236,50 +236,62 @@ const Aufgaben = () => {
 
   const loadTaskActivities = async (taskId) => {
     try {
-      // First try to load from task_activities table
-      const { data: activities } = await supabase
-        .from('task_activities')
-        .select('*')
-        .eq('task_id', taskId)
-        .order('created_at', { ascending: false });
-      
-      if (activities && activities.length > 0) {
-        setTaskActivities(activities);
-        return;
-      }
-
-      // Fallback: Load from JSON activities in tasks table
+      // Load from JSON activities in tasks table (primary method)
       const { data: task } = await supabase
         .from('tasks')
         .select('activities')
         .eq('id', taskId)
         .single();
 
-      if (task && task.activities) {
+      if (task && task.activities && Array.isArray(task.activities)) {
         // Convert JSON activities to the same format as table activities
         const jsonActivities = task.activities.map(activity => {
-          // If user_data is missing, try to get it from userCache
+          // Ensure user_data is available
           let userData = activity.user_data;
           if (!userData && activity.user_id) {
             userData = getUserData(activity.user_id);
           }
           
+          // Ensure we have a proper user_id
+          const userId = activity.user_id || user.id;
+          
+          // If still no user_data, try to get it from cache
+          if (!userData && userId) {
+            userData = getUserData(userId);
+          }
+          
           return {
-            id: activity.id,
+            id: activity.id || `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             task_id: taskId,
-            user_id: activity.user_id || user.id,
-            user_data: userData, // Include user_data from JSON or fallback
+            user_id: userId,
+            user_data: userData,
             activity_type: activity.type,
             title: activity.title,
             description: activity.description,
-            metadata: activity.data,
+            metadata: activity.data || {},
             created_at: activity.timestamp
           };
         });
         
+        console.log('Loaded activities from JSON:', jsonActivities.length);
         setTaskActivities(jsonActivities);
       } else {
-        setTaskActivities([]);
+        console.log('No activities found in JSON, checking task_activities table...');
+        
+        // Fallback: Try task_activities table
+        const { data: activities } = await supabase
+          .from('task_activities')
+          .select('*')
+          .eq('task_id', taskId)
+          .order('created_at', { ascending: false });
+        
+        if (activities && activities.length > 0) {
+          console.log('Loaded activities from table:', activities.length);
+          setTaskActivities(activities);
+        } else {
+          console.log('No activities found in table either');
+          setTaskActivities([]);
+        }
       }
     } catch (error) {
       console.error('Error loading task activities:', error);
@@ -383,12 +395,21 @@ const Aufgaben = () => {
     try {
       console.log('Adding activity:', { isInline, inlineActivityType, activityType, activityForm });
 
-      // Create activity content as JSON (like Klausuren)
-      const activityContent = {
+      // Create new activity with unique ID
+      const newActivity = {
+        id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: isInline ? inlineActivityType : activityType,
         title: activityForm.title,
         description: activityForm.description,
         timestamp: new Date().toISOString(),
+        user_id: user.id,
+        user_name: user.user_metadata?.full_name || user.email,
+        user_data: {
+          id: user.id,
+          full_name: user.user_metadata?.full_name || user.email,
+          avatar_url: user.user_metadata?.avatar_url,
+          email: user.email
+        },
         data: {
           hours_spent: (isInline && inlineActivityType === 'pause') ? 0 : (parseFloat(activityForm.hours_spent) || 0),
           next_action: activityForm.next_action || null,
@@ -396,135 +417,100 @@ const Aufgaben = () => {
         }
       };
 
-      // Try JSON approach first (more reliable)
-      try {
-        // Get current activities from task
-        const currentActivities = selectedTask.activities || [];
-        
-        // Add new activity
-        const newActivity = {
-          id: Date.now().toString(),
-          type: isInline ? inlineActivityType : activityType,
-          title: activityForm.title,
-          description: activityForm.description,
-          timestamp: new Date().toISOString(),
-          user_id: user.id,
-          user_name: user.user_metadata?.full_name || user.email,
-                  user_data: {
-          id: user.id,
-          full_name: user.user_metadata?.full_name || user.email,
-          avatar_url: user.user_metadata?.avatar_url,
-          email: user.email
-        },
-          data: {
-            hours_spent: (isInline && inlineActivityType === 'pause') ? 0 : (parseFloat(activityForm.hours_spent) || 0),
-            next_action: activityForm.next_action || null,
-            next_action_date: activityForm.next_action_date || null
-          }
-        };
-
-        const updatedActivities = [newActivity, ...currentActivities];
-
-        // Update task with new activities and hours
-        const updateData = {
-          activities: updatedActivities
-        };
-
-        if (activityForm.hours_spent > 0 && !(isInline && inlineActivityType === 'pause')) {
-          updateData.actual_hours = (selectedTask.actual_hours || 0) + parseFloat(activityForm.hours_spent);
-        }
-
-        // Update next_action_date if provided in activity
-        if (activityForm.next_action_date) {
-          updateData.next_action_date = activityForm.next_action_date;
-        }
-
-        // Handle add_person activity
-        if (isInline && inlineActivityType === 'add_person' && activityForm.person_to_add) {
-          const personToAdd = activityForm.person_to_add;
-          const currentAssistants = selectedTask.task_assistants || [];
-          
-          // Add person to assistants if not already there
-          if (!currentAssistants.includes(personToAdd)) {
-            updateData.task_assistants = [...currentAssistants, personToAdd];
-          }
-          
-          // Update activity description
-          const personData = getUserData(personToAdd);
-          newActivity.description = `${personData.full_name} wurde zur Aufgabe hinzugefügt`;
-          newActivity.data.person_added = personToAdd;
-          newActivity.data.person_name = personData.full_name;
-        }
-
-        // Auto-update status based on activity type
-        if (currentActivities.length === 0) {
-          // First activity: set to "In Progress"
-          const inProgressStatus = statuses.find(s => s.name === 'in_progress');
-          if (inProgressStatus) {
-            updateData.status_id = inProgressStatus.id;
-          }
-        } else if (isInline && inlineActivityType === 'pause') {
-          // Pause activity: set to "Paused"
-          const pausedStatus = statuses.find(s => s.name === 'paused');
-          if (pausedStatus) {
-            updateData.status_id = pausedStatus.id;
-          }
-        }
-
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update(updateData)
-          .eq('id', selectedTask.id);
-
-        if (updateError) {
-          console.error('Task update error:', updateError);
-          throw updateError;
-        }
-
-        console.log('Activity saved as JSON successfully');
-        console.log('New activity with user_data:', newActivity);
-      } catch (jsonError) {
-        console.log('JSON approach failed, trying activity table...');
-        
-        // Fallback: Try task_activities table
-        const activityData = {
-          task_id: selectedTask.id,
-          user_id: user.id,
-          activity_type: isInline ? inlineActivityType : activityType,
-          title: activityForm.title,
-          description: activityForm.description,
-          metadata: activityContent.data
-        };
-
-        const { error: activityError } = await supabase
-          .from('task_activities')
-          .insert([activityData]);
-
-        if (activityError) {
-          console.error('Activity insert error:', activityError);
-          throw activityError;
-        }
-
-        // Update task if hours were logged or next_action_date was set
-        const taskUpdateData = {};
-        
-        if (activityForm.hours_spent > 0 && !(isInline && inlineActivityType === 'pause')) {
-          taskUpdateData.actual_hours = (selectedTask.actual_hours || 0) + parseFloat(activityForm.hours_spent);
-        }
-        
-        if (activityForm.next_action_date) {
-          taskUpdateData.next_action_date = activityForm.next_action_date;
-        }
-        
-        if (Object.keys(taskUpdateData).length > 0) {
-          await supabase
-            .from('tasks')
-            .update(taskUpdateData)
-            .eq('id', selectedTask.id);
-        }
-
-        console.log('Activity saved in activity table successfully');
+      // Validate that we don't have duplicate activities (same title and timestamp within 5 seconds)
+      const currentActivities = Array.isArray(selectedTask.activities) ? selectedTask.activities : [];
+      const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+      
+      const isDuplicate = currentActivities.some(activity => 
+        activity.title === newActivity.title && 
+        activity.timestamp > fiveSecondsAgo
+      );
+      
+      if (isDuplicate) {
+        console.warn('Duplicate activity detected, skipping...');
+        return;
       }
+      
+      // Add new activity to the beginning (most recent first)
+      const updatedActivities = [newActivity, ...currentActivities];
+      
+      // Ensure activities are sorted by timestamp (newest first)
+      updatedActivities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      // Remove any duplicate activities based on ID
+      const uniqueActivities = updatedActivities.filter((activity, index, self) => 
+        index === self.findIndex(a => a.id === activity.id)
+      );
+      
+      // Use unique activities
+      const finalActivities = uniqueActivities;
+
+      // Prepare update data
+      const updateData = {
+        activities: finalActivities
+      };
+
+      // Update hours if provided
+      if (activityForm.hours_spent > 0 && !(isInline && inlineActivityType === 'pause')) {
+        updateData.actual_hours = (selectedTask.actual_hours || 0) + parseFloat(activityForm.hours_spent);
+      }
+
+      // Update next_action_date if provided
+      if (activityForm.next_action_date) {
+        updateData.next_action_date = activityForm.next_action_date;
+      }
+
+      // Handle add_person activity
+      if (isInline && inlineActivityType === 'add_person' && activityForm.person_to_add) {
+        const personToAdd = activityForm.person_to_add;
+        const currentAssistants = selectedTask.task_assistants || [];
+        
+        // Add person to assistants if not already there
+        if (!currentAssistants.includes(personToAdd)) {
+          updateData.task_assistants = [...currentAssistants, personToAdd];
+        }
+        
+        // Update activity description
+        const personData = getUserData(personToAdd);
+        newActivity.description = `${personData.full_name} wurde zur Aufgabe hinzugefügt`;
+        newActivity.data.person_added = personToAdd;
+        newActivity.data.person_name = personData.full_name;
+      }
+
+      // Auto-update status based on activity type
+      if (currentActivities.length === 0) {
+        // First activity: set to "In Progress"
+        const inProgressStatus = statuses.find(s => s.name === 'in_progress');
+        if (inProgressStatus) {
+          updateData.status_id = inProgressStatus.id;
+        }
+      } else if (isInline && inlineActivityType === 'pause') {
+        // Pause activity: set to "Paused"
+        const pausedStatus = statuses.find(s => s.name === 'paused');
+        if (pausedStatus) {
+          updateData.status_id = pausedStatus.id;
+        }
+      }
+
+      // Update task with new activities
+      const { data: updatedTask, error: updateError } = await supabase
+        .from('tasks')
+        .update(updateData)
+        .eq('id', selectedTask.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Task update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('Task updated successfully:', updatedTask);
+      console.log('Activities in updated task:', updatedTask.activities?.length || 0);
+
+      console.log('Activity saved successfully:', newActivity);
+      console.log('Total activities now:', updatedActivities.length);
+      console.log('Updated task data:', updateData);
 
       // Close modal/form
       if (isInline) {
@@ -543,13 +529,24 @@ const Aufgaben = () => {
         person_to_add: ''
       });
 
+      // Reload the complete task data from database to ensure consistency
+      if (selectedTask) {
+        const { data: refreshedTask } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', selectedTask.id)
+          .single();
+        
+        if (refreshedTask) {
+          console.log('Refreshed task data:', refreshedTask);
+          console.log('Activities in refreshed task:', refreshedTask.activities?.length || 0);
+          setSelectedTask(refreshedTask);
+          await loadTaskActivities(refreshedTask.id);
+        }
+      }
+      
       // Reload data
       await loadData();
-      
-      // Reload activities if task detail is open
-      if (selectedTask) {
-        await loadTaskActivities(selectedTask.id);
-      }
 
       console.log('Activity added successfully!');
     } catch (error) {
@@ -1333,51 +1330,41 @@ const Aufgaben = () => {
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="font-medium text-gray-900 dark:text-white">{activity.title}</span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {new Date(activity.created_at).toLocaleString('de-DE')}
+                                    {new Date(activity.timestamp || activity.created_at).toLocaleString('de-DE')}
                                   </span>
                                                                     {/* Show user avatar for activities */}
                                   {activity.user_id && (
-                                    <>
-                                      {console.log('Activity user data:', { user_id: activity.user_id, user_data: activity.user_data })}
-                                      <div className="flex items-center gap-1">
-                                        {/* Always show the user who created the activity, not the current user */}
-                                        {activity.user_data ? (
-                                          <>
-                                            {activity.user_data.avatar_url ? (
+                                    <div className="flex items-center gap-2 ml-auto">
+                                      {/* Get user data from activity or cache */}
+                                      {(() => {
+                                        const userData = activity.user_data || getUserData(activity.user_id);
+                                        const isCurrentUser = userData.id === user.id;
+                                        
+                                        return (
+                                          <div className="flex items-center gap-1">
+                                            {/* Avatar */}
+                                            {userData.avatar_url ? (
                                               <img 
-                                                src={activity.user_data.avatar_url} 
-                                                alt={activity.user_data.full_name}
-                                                className="w-4 h-4 rounded-full"
+                                                src={userData.avatar_url} 
+                                                alt={userData.full_name}
+                                                className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
                                               />
                                             ) : (
-                                              <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-medium">
-                                                {activity.user_data.full_name.charAt(0).toUpperCase()}
+                                              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium shadow-sm ${
+                                                isCurrentUser ? 'bg-blue-500' : 'bg-green-500'
+                                              }`}>
+                                                {userData.full_name.charAt(0).toUpperCase()}
                                               </div>
                                             )}
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                              von {activity.user_data.full_name}
+                                            
+                                            {/* User name */}
+                                            <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                                              {isCurrentUser ? 'Du' : userData.full_name}
                                             </span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            {getUserData(activity.user_id).avatar_url ? (
-                                              <img 
-                                                src={getUserData(activity.user_id).avatar_url} 
-                                                alt={getUserData(activity.user_id).full_name}
-                                                className="w-4 h-4 rounded-full"
-                                              />
-                                            ) : (
-                                              <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-medium">
-                                                {getUserData(activity.user_id).full_name.charAt(0).toUpperCase()}
-                                              </div>
-                                            )}
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                              von {getUserData(activity.user_id).full_name}
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-                                    </>
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
                                   )}
                                 </div>
                                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
@@ -1385,30 +1372,45 @@ const Aufgaben = () => {
                                 </p>
                                 
                                 {/* Activity Metadata */}
-                                {activity.metadata && (
-                                  <div className="space-y-1">
-                                    {activity.metadata.hours_spent > 0 && (
+                                {(activity.data || activity.metadata) && (
+                                  <div className="space-y-1 mt-2">
+                                    {/* Hours spent */}
+                                    {((activity.data?.hours_spent > 0) || (activity.metadata?.hours_spent > 0)) && (
                                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                         <Clock className="w-3 h-3" />
-                                        <span>{activity.metadata.hours_spent}h verbracht</span>
+                                        <span>{(activity.data?.hours_spent || activity.metadata?.hours_spent)}h verbracht</span>
                                       </div>
                                     )}
-                                    {activity.metadata.next_action && (
+                                    
+                                    {/* Next action */}
+                                    {(activity.data?.next_action || activity.metadata?.next_action) && (
                                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                         <Flag className="w-3 h-3" />
-                                        <span>Next Action: {activity.metadata.next_action}</span>
+                                        <span>Next Action: {activity.data?.next_action || activity.metadata?.next_action}</span>
                                       </div>
                                     )}
-                                    {activity.metadata.next_action_date && (
+                                    
+                                    {/* Next action date */}
+                                    {(activity.data?.next_action_date || activity.metadata?.next_action_date) && (
                                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                         <Calendar className="w-3 h-3" />
-                                        <span>Datum: {new Date(activity.metadata.next_action_date).toLocaleDateString('de-DE')}</span>
+                                        <span>Datum: {new Date(activity.data?.next_action_date || activity.metadata?.next_action_date).toLocaleDateString('de-DE')}</span>
                                       </div>
                                     )}
-                                    {activity.metadata.old_status && activity.metadata.new_status && (
+                                    
+                                    {/* Status change */}
+                                    {activity.metadata?.old_status && activity.metadata?.new_status && (
                                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                         <TrendingUp className="w-3 h-3" />
                                         <span>Status: {activity.metadata.old_status} → {activity.metadata.new_status}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Person added */}
+                                    {activity.data?.person_added && (
+                                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                        <UserPlus className="w-3 h-3" />
+                                        <span>{activity.data.person_name || 'Person'} hinzugefügt</span>
                                       </div>
                                     )}
                                   </div>

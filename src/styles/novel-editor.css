@@ -1,0 +1,280 @@
+/* 🔥 NOVEL.SH EDITOR CUSTOM STYLES 🔥 */
+
+/* Base editor styling */
+.novel-editor {
+  min-height: 400px;
+  padding: 24px;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.novel-editor .ProseMirror {
+  outline: none !important;
+  border: none !important;
+  background: transparent !important;
+  color: rgb(var(--foreground)) !important;
+  line-height: 1.7 !important;
+  font-size: 16px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Custom heading styles with gradients */
+.novel-editor .ProseMirror h1 {
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin: 2rem 0 1rem 0 !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.novel-editor .ProseMirror h2 {
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 1.5rem 0 0.75rem 0 !important;
+  color: rgb(var(--foreground)) !important;
+}
+
+.novel-editor .ProseMirror h3 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin: 1.25rem 0 0.5rem 0 !important;
+  color: rgb(var(--foreground)) !important;
+}
+
+/* Beautiful blockquotes */
+.novel-editor .ProseMirror blockquote {
+  border-left: 4px solid #667eea !important;
+  padding-left: 1rem !important;
+  margin: 1rem 0 !important;
+  font-style: italic !important;
+  background: rgba(102, 126, 234, 0.05) !important;
+  border-radius: 0 8px 8px 0 !important;
+}
+
+/* Enhanced lists */
+.novel-editor .ProseMirror ul,
+.novel-editor .ProseMirror ol {
+  padding-left: 1.5rem !important;
+  margin: 1rem 0 !important;
+}
+
+.novel-editor .ProseMirror li {
+  margin: 0.25rem 0 !important;
+}
+
+/* Code styling */
+.novel-editor .ProseMirror code {
+  background: rgba(102, 126, 234, 0.1) !important;
+  padding: 0.2rem 0.4rem !important;
+  border-radius: 4px !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 0.9em !important;
+  color: #667eea !important;
+}
+
+.novel-editor .ProseMirror pre {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  overflow-x: auto !important;
+}
+
+/* Link styling */
+.novel-editor .ProseMirror a {
+  color: #667eea !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(102, 126, 234, 0.3) !important;
+  text-underline-offset: 2px !important;
+  transition: all 0.2s ease !important;
+}
+
+.novel-editor .ProseMirror a:hover {
+  text-decoration-color: #667eea !important;
+  background: rgba(102, 126, 234, 0.05) !important;
+  border-radius: 4px !important;
+  padding: 0 2px !important;
+}
+
+/* Strong and emphasis */
+.novel-editor .ProseMirror strong {
+  font-weight: 700 !important;
+  color: rgb(var(--foreground)) !important;
+}
+
+.novel-editor .ProseMirror em {
+  font-style: italic !important;
+  color: rgba(var(--foreground), 0.8) !important;
+}
+
+/* Slash command menu styling */
+.novel-slash-command {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  padding: 8px !important;
+  max-height: 280px !important;
+  overflow-y: auto !important;
+  z-index: 1000 !important;
+}
+
+.novel-slash-command-item {
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.novel-slash-command-item:hover,
+.novel-slash-command-item[data-selected="true"] {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Bubble menu styling */
+.novel-bubble-menu {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+  padding: 4px !important;
+}
+
+.novel-bubble-menu button {
+  padding: 8px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #666 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.novel-bubble-menu button:hover,
+.novel-bubble-menu button.is-active {
+  background: #667eea !important;
+  color: white !important;
+}
+
+/* Image styling */
+.novel-editor .ProseMirror img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px !important;
+  margin: 1rem 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Tweet embed styling */
+.novel-editor .ProseMirror .twitter-tweet {
+  margin: 1rem auto !important;
+  max-width: 550px !important;
+}
+
+/* LaTeX math styling */
+.novel-editor .ProseMirror .katex {
+  font-size: 1.1em !important;
+}
+
+.novel-editor .ProseMirror .katex-display {
+  margin: 1rem 0 !important;
+  text-align: center !important;
+}
+
+/* Placeholder styling */
+.novel-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: rgba(var(--foreground), 0.4) !important;
+  content: attr(data-placeholder) !important;
+  float: left !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Focus styles */
+.novel-editor .ProseMirror:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Selection styling */
+.novel-editor .ProseMirror ::selection {
+  background: rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Dark mode adaptations */
+@media (prefers-color-scheme: dark) {
+  .novel-slash-command {
+    background: rgba(31, 41, 55, 0.95) !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+  }
+  
+  .novel-bubble-menu {
+    background: rgba(31, 41, 55, 0.95) !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+  }
+  
+  .novel-editor .ProseMirror blockquote {
+    background: rgba(102, 126, 234, 0.1) !important;
+  }
+  
+  .novel-editor .ProseMirror code {
+    background: rgba(102, 126, 234, 0.2) !important;
+    color: #a78bfa !important;
+  }
+  
+  .novel-editor .ProseMirror pre {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+  }
+}
+
+/* AI autocomplete styling */
+.novel-ai-autocomplete {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 0.9em !important;
+  margin-left: 4px !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.novel-ai-autocomplete:hover {
+  opacity: 1 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .novel-editor {
+    padding: 16px !important;
+  }
+  
+  .novel-editor .ProseMirror h1 {
+    font-size: 2rem !important;
+  }
+  
+  .novel-editor .ProseMirror h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  .novel-editor .ProseMirror h3 {
+    font-size: 1.25rem !important;
+  }
+}

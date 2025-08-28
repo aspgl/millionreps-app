@@ -37,6 +37,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './AuthContext';
 import { CalendarService } from './lib/calendarService';
+import { DeepWorkService } from './lib/deepworkService';
+import DeepWorkEventDetails from './components/DeepWorkEventDetails';
 
 const Kalender = () => {
   const { user } = useAuth();
@@ -64,13 +66,23 @@ const Kalender = () => {
     personal: true,
     health: true,
     learning: true,
-    finance: true
+    finance: true,
+    deepwork: true
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [deepworkStats, setDeepworkStats] = useState({
+    totalSessions: 0,
+    totalDuration: 0,
+    averageFocusScore: 0,
+    totalTasksCompleted: 0,
+    totalTasksPlanned: 0
+  });
 
-  // Load events from Supabase
+
+
+  // Load events when view or date changes
   useEffect(() => {
-    const loadEvents = async () => {
+    const loadEventsForView = async () => {
       if (!user) {
         setLoading(false);
         return;
@@ -78,50 +90,119 @@ const Kalender = () => {
 
       try {
         setLoading(true);
-        const eventsData = await CalendarService.getEvents(user.id);
-        setEvents(eventsData);
+        let eventsData = [];
+        
+        // Try to load calendar events from database
+        try {
+          console.log('Loading calendar events from database...');
+          eventsData = await CalendarService.getEvents(user.id);
+          console.log('Calendar events loaded from database:', eventsData.length);
+        } catch (dbError) {
+          console.error('Database error loading events, trying localStorage:', dbError);
+          
+          // Fallback: Load from localStorage
+          const localEvents = JSON.parse(localStorage.getItem('calendar_events') || '[]');
+          eventsData = localEvents.filter(event => event.user_id === user.id);
+          console.log('Calendar events loaded from localStorage:', eventsData.length);
+        }
+        
+        // Load deep work sessions for the same date range
+        console.log('Loading deep work sessions for view:', view);
+        let deepworkSessions = [];
+        
+        try {
+          switch (view) {
+            case 'month':
+              const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+              const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+              deepworkSessions = await DeepWorkService.getSessionsForDateRange(user.id, monthStart, monthEnd);
+              break;
+            case 'week':
+              const weekStartDate = getWeekStart(currentDate);
+              const weekEndDate = new Date(weekStartDate);
+              weekEndDate.setDate(weekStartDate.getDate() + 6);
+              deepworkSessions = await DeepWorkService.getSessionsForDateRange(user.id, weekStartDate, weekEndDate);
+              break;
+            case 'day':
+              const dayStart = new Date(currentDate);
+              dayStart.setHours(0, 0, 0, 0);
+              const dayEnd = new Date(currentDate);
+              dayEnd.setHours(23, 59, 59, 999);
+              deepworkSessions = await DeepWorkService.getSessionsForDateRange(user.id, dayStart, dayEnd);
+              break;
+            default:
+              deepworkSessions = await DeepWorkService.getUserSessions(user.id);
+          }
+          
+          console.log('Deep work sessions loaded for view:', deepworkSessions?.length || 0);
+          
+          // Additional client-side filtering to ensure no demo sessions
+          deepworkSessions = deepworkSessions.filter(session => {
+            const isDemo = 
+              session.title?.includes('Demo') ||
+              session.title?.includes('Test') ||
+              session.title?.startsWith('Deep Work Session -') ||
+              session.description?.includes('Demo') ||
+              session.description?.includes('Test') ||
+              session.description?.includes('Intensive') ||
+              session.description?.includes('Studium') ||
+              session.description?.includes('Strategische') ||
+              (session.tags && session.tags.includes('demo')) ||
+              (session.tags && session.tags.includes('test'));
+            
+            if (isDemo) {
+              console.log('Filtering out demo session in calendar:', session.title);
+            }
+            
+            return !isDemo;
+          });
+          
+          console.log('Deep work sessions after filtering:', deepworkSessions?.length || 0);
+        } catch (error) {
+          console.error('Error loading deep work sessions:', error);
+          deepworkSessions = [];
+        }
+        
+        console.log('Deep work sessions for view:', deepworkSessions?.length || 0);
+        const deepworkEvents = DeepWorkService.convertSessionsToEvents(deepworkSessions);
+        console.log('Deep work events for view:', deepworkEvents?.length || 0);
+        
+        // Combine all events
+        const allEvents = [...eventsData, ...deepworkEvents];
+        console.log('Total events for view:', allEvents?.length || 0);
+        console.log('Calendar events:', eventsData.map(e => ({ title: e.title, category: e.category, start: e.start })));
+        console.log('Deep work events:', deepworkEvents.map(e => ({ title: e.title, category: e.category, start: e.start })));
+        
+        // Debug: Check if events have correct structure
+        allEvents.forEach((event, index) => {
+          console.log(`Event ${index}:`, {
+            id: event.id,
+            title: event.title,
+            category: event.category,
+            start: event.start,
+            startType: typeof event.start,
+            startString: event.start?.toString(),
+            end: event.end,
+            endType: typeof event.end,
+            endString: event.end?.toString(),
+            isValidStart: event.start instanceof Date && !isNaN(event.start.getTime()),
+            isValidEnd: event.end instanceof Date && !isNaN(event.end.getTime())
+          });
+        });
+        
+        setEvents(allEvents);
+        
+        // Update deep work stats for current month
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        const stats = await DeepWorkService.getSessionStats(user.id, startOfMonth, endOfMonth);
+        setDeepworkStats(stats);
+        
       } catch (error) {
-        console.error('Error loading events:', error);
+        console.error('Error loading events for view:', error);
         setEvents([]);
       } finally {
         setLoading(false);
-      }
-    };
-
-    loadEvents();
-  }, [user]);
-
-  // Load events when view or date changes
-  useEffect(() => {
-    const loadEventsForView = async () => {
-      if (!user) return;
-
-      try {
-        let eventsData = [];
-        
-        switch (view) {
-          case 'month':
-            const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-            eventsData = await CalendarService.getEvents(user.id, startOfMonth, endOfMonth);
-            break;
-          case 'week':
-            const weekStart = getWeekStart(currentDate);
-            eventsData = await CalendarService.getEventsForWeek(user.id, weekStart);
-            break;
-          case 'day':
-            eventsData = await CalendarService.getEventsForDay(user.id, currentDate);
-            break;
-          case 'agenda':
-            eventsData = await CalendarService.getUpcomingEvents(user.id, 20);
-            break;
-          default:
-            eventsData = await CalendarService.getEvents(user.id);
-        }
-        
-        setEvents(eventsData);
-      } catch (error) {
-        console.error('Error loading events for view:', error);
       }
     };
 
@@ -163,20 +244,68 @@ const Kalender = () => {
   };
 
   const getEventsForDate = (date) => {
-    return filteredEvents.filter(event => {
+    console.log('Getting events for date:', date.toDateString());
+    console.log('Filtered events available:', filteredEvents.length);
+    console.log('Available events:', filteredEvents.map(e => ({ title: e.title, start: e.start, category: e.category })));
+    
+    const eventsForDate = filteredEvents.filter(event => {
       const eventDate = new Date(event.start);
-      return eventDate.toDateString() === date.toDateString();
+      const matches = eventDate.toDateString() === date.toDateString();
+      if (matches) {
+        console.log('Event matches date:', event.title, 'date:', eventDate.toDateString(), 'target:', date.toDateString());
+      }
+      return matches;
     });
+    
+    console.log('Events for date', date.toDateString(), ':', eventsForDate.length, eventsForDate.map(e => e.title));
+    return eventsForDate;
   };
 
   const getEventsForWeek = (startDate) => {
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
     
-    return filteredEvents.filter(event => {
-      const eventDate = new Date(event.start);
-      return eventDate >= startDate && eventDate <= endDate;
+    console.log('Getting events for week:', {
+      startDate: startDate.toDateString(),
+      endDate: endDate.toDateString(),
+      totalEvents: filteredEvents.length
     });
+    
+    const weekEvents = filteredEvents.filter(event => {
+      const eventDate = new Date(event.start);
+      const isInWeek = eventDate >= startDate && eventDate <= endDate;
+      
+      if (isInWeek) {
+        console.log('Week event found:', event.title, 'date:', eventDate.toDateString(), 'time:', eventDate.toLocaleTimeString());
+      }
+      
+      return isInWeek;
+    });
+    
+    // Validate and fix event times
+    const validatedEvents = weekEvents.map(event => {
+      const startTime = new Date(event.start);
+      const endTime = new Date(event.end);
+      
+      // Ensure end time is after start time
+      if (endTime <= startTime) {
+        console.warn('Invalid event time, fixing:', event.title, 'start:', startTime, 'end:', endTime);
+        endTime.setTime(startTime.getTime() + (60 * 60 * 1000)); // Add 1 hour
+      }
+      
+      return {
+        ...event,
+        start: startTime,
+        end: endTime
+      };
+    });
+    
+    console.log('Week events found:', validatedEvents.length, validatedEvents.map(e => ({ 
+      title: e.title, 
+      start: e.start.toLocaleTimeString(),
+      end: e.end.toLocaleTimeString()
+    })));
+    return validatedEvents;
   };
 
   const getEventsForDay = (date) => {
@@ -217,7 +346,8 @@ const Kalender = () => {
       health: 'Heart',
       learning: 'BookOpen',
       finance: 'DollarSign',
-      personal: 'Star'
+      personal: 'Star',
+      deepwork: 'Brain'
     };
     return icons[category] || 'Calendar';
   };
@@ -246,6 +376,11 @@ const Kalender = () => {
   };
 
   const formatTime = (date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      console.error('Invalid date passed to formatTime:', date);
+      return '00:00';
+    }
+    
     return date.toLocaleTimeString('de-DE', { 
       hour: '2-digit', 
       minute: '2-digit' 
@@ -258,6 +393,48 @@ const Kalender = () => {
       newDate.setMonth(prev.getMonth() + direction);
       return newDate;
     });
+  };
+
+  const navigateWeek = (direction) => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() + (direction * 7));
+      return newDate;
+    });
+  };
+
+  const navigateDay = (direction) => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() + direction);
+      return newDate;
+    });
+  };
+
+  const navigateView = (direction) => {
+    console.log('Navigating view:', view, 'direction:', direction);
+    
+    switch (view) {
+      case 'month':
+        console.log('Navigating month by', direction, 'months');
+        navigateMonth(direction);
+        break;
+      case 'week':
+        console.log('Navigating week by', direction * 7, 'days');
+        navigateWeek(direction);
+        break;
+      case 'day':
+        console.log('Navigating day by', direction, 'days');
+        navigateDay(direction);
+        break;
+      case 'agenda':
+        console.log('Navigating agenda by', direction, 'days');
+        navigateDay(direction);
+        break;
+      default:
+        console.log('Default navigation: month by', direction, 'months');
+        navigateMonth(direction);
+    }
   };
 
   const openEventModal = (date = null, event = null) => {
@@ -299,7 +476,7 @@ const Kalender = () => {
 
     try {
       const eventData = {
-        userId: user.id,
+        user_id: user.id, // Changed from userId to user_id
         title: eventForm.title,
         description: eventForm.description,
         start: new Date(eventForm.start),
@@ -313,6 +490,8 @@ const Kalender = () => {
         icon: getCategoryIcon(eventForm.category)
       };
 
+      console.log('Saving event data:', eventData);
+
       let savedEvent;
       if (editingEvent) {
         // Update existing event
@@ -320,9 +499,35 @@ const Kalender = () => {
         setEvents(prev => prev.map(e => e.id === editingEvent.id ? savedEvent : e));
       } else {
         // Create new event
-        savedEvent = await CalendarService.createEvent(eventData);
-        setEvents(prev => [...prev, savedEvent]);
+        try {
+          savedEvent = await CalendarService.createEvent(eventData);
+          setEvents(prev => [...prev, savedEvent]);
+        } catch (dbError) {
+          console.error('Database error, trying fallback:', dbError);
+          
+          // Fallback: Create event in localStorage
+          const fallbackEvent = {
+            id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            ...eventData,
+            start: eventData.start,
+            end: eventData.end,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          // Save to localStorage
+          const existingEvents = JSON.parse(localStorage.getItem('calendar_events') || '[]');
+          existingEvents.push(fallbackEvent);
+          localStorage.setItem('calendar_events', JSON.stringify(existingEvents));
+          
+          savedEvent = fallbackEvent;
+          setEvents(prev => [...prev, savedEvent]);
+          
+          alert('Event wurde lokal gespeichert (Datenbank nicht verfügbar)');
+        }
       }
+
+      console.log('Event saved successfully:', savedEvent);
 
       setShowEventModal(false);
       setEditingEvent(null);
@@ -339,7 +544,7 @@ const Kalender = () => {
       });
     } catch (error) {
       console.error('Error saving event:', error);
-      alert('Fehler beim Speichern des Events');
+      alert(`Fehler beim Speichern des Events: ${error.message}`);
     }
   };
 
@@ -366,19 +571,29 @@ const Kalender = () => {
   };
 
   const filteredEvents = events.filter(event => {
+    console.log('Filtering event:', event.title, 'category:', event.category, 'filters:', filters);
+    
     // Apply category filters
-    if (!filters[event.category]) return false;
+    if (!filters[event.category]) {
+      console.log('Event filtered out by category:', event.title, 'category:', event.category);
+      return false;
+    }
     
     // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      return (
+      const matches = (
         event.title.toLowerCase().includes(searchLower) ||
-        event.description.toLowerCase().includes(searchLower) ||
-        event.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        (event.description && event.description.toLowerCase().includes(searchLower)) ||
+        (event.tags && event.tags.some(tag => tag.toLowerCase().includes(searchLower)))
       );
+      if (!matches) {
+        console.log('Event filtered out by search:', event.title);
+        return false;
+      }
     }
     
+    console.log('Event passed filter:', event.title);
     return true;
   });
 
@@ -402,8 +617,9 @@ const Kalender = () => {
     <div className="grid grid-cols-7 gap-1">
       {/* Week day headers */}
       {weekDays.map(day => (
-        <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          {day}
+        <div key={day} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <span className="hidden sm:inline">{day}</span>
+          <span className="sm:hidden">{day.charAt(0)}</span>
         </div>
       ))}
       
@@ -418,7 +634,7 @@ const Kalender = () => {
             key={index}
             onDoubleClick={() => openEventModal(day.date)}
             onClick={() => setSelectedDate(day.date)}
-            className={`min-h-[120px] p-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
+            className={`min-h-[80px] sm:min-h-[120px] p-1 sm:p-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
               isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600' : ''
             } ${
               !isCurrentMonth ? 'opacity-50' : ''
@@ -426,14 +642,14 @@ const Kalender = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-sm font-medium ${
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <span className={`text-xs sm:text-sm font-medium ${
                 isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
               }`}>
                 {day.date.getDate()}
               </span>
               {dayEvents.length > 0 && (
-                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">
+                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 px-1 sm:px-1.5 py-0.5 rounded-full">
                   {dayEvents.length}
                 </span>
               )}
@@ -441,33 +657,33 @@ const Kalender = () => {
             
             {/* Events */}
             <div className="space-y-1">
-              {dayEvents.slice(0, 3).map(event => (
+              {dayEvents.slice(0, 2).map(event => (
                 <motion.div
                   key={event.id}
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedEvent(event);
                   }}
-                  className="p-1.5 rounded-md text-xs cursor-pointer transition-all hover:scale-105"
+                  className="p-1 sm:p-1.5 rounded-md text-xs cursor-pointer transition-all hover:scale-105"
                   style={{ backgroundColor: `${event.color}20`, borderLeft: `3px solid ${event.color}` }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <div className="flex items-center gap-1 mb-1">
-                    <div className={`w-2 h-2 rounded-full ${getPriorityColor(event.priority)}`}></div>
-                    <span className="font-medium text-gray-900 dark:text-white truncate">
+                    <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${getPriorityColor(event.priority)}`}></div>
+                    <span className="font-medium text-gray-900 dark:text-white truncate text-xs">
                       {event.title}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                    <Clock className="h-3 w-3" />
-                    <span>{formatTime(event.start)}</span>
+                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    <span className="text-xs">{formatTime(event.start)}</span>
                   </div>
                 </motion.div>
               ))}
-              {dayEvents.length > 3 && (
+              {dayEvents.length > 2 && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  +{dayEvents.length - 3} weitere
+                  +{dayEvents.length - 2} weitere
                 </div>
               )}
             </div>
@@ -483,16 +699,17 @@ const Kalender = () => {
     const weekEvents = getEventsForWeek(weekStart);
     
     return (
-      <div className="space-y-4">
-        {/* Week header */}
-        <div className="grid grid-cols-8 gap-2">
-          <div className="p-2"></div>
+      <div className="space-y-2 sm:space-y-4">
+        {/* Week header - Fixed */}
+        <div className="grid grid-cols-8 gap-1 sm:gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 sm:p-2 shadow-sm">
+          <div className="p-1 sm:p-2"></div>
           {weekDays.map((day, index) => (
-            <div key={index} className="p-2 text-center">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+            <div key={index} className="p-1 sm:p-2 text-center">
+              <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                <span className="hidden sm:inline">{day.toLocaleDateString('de-DE', { weekday: 'short' })}</span>
+                <span className="sm:hidden">{day.toLocaleDateString('de-DE', { weekday: 'short' }).charAt(0)}</span>
               </div>
-              <div className={`text-lg font-bold ${
+              <div className={`text-sm sm:text-lg font-bold ${
                 day.toDateString() === today.toDateString() 
                   ? 'text-blue-600 dark:text-blue-400' 
                   : 'text-gray-700 dark:text-gray-300'
@@ -503,12 +720,13 @@ const Kalender = () => {
           ))}
         </div>
         
-        {/* Time slots */}
-        <div className="grid grid-cols-8 gap-2">
-          <div className="space-y-2">
+        {/* Time slots - Scrollable */}
+        <div className="grid grid-cols-8 gap-1 sm:gap-2 h-[400px] sm:h-[600px] overflow-y-auto bg-white dark:bg-gray-800 rounded-lg p-1 sm:p-2 shadow-sm">
+          <div className="space-y-0">
             {getTimeSlots().map(hour => (
-              <div key={hour} className="h-12 text-xs text-gray-500 dark:text-gray-400 text-right pr-2 pt-1">
-                {hour.toString().padStart(2, '0')}:00
+              <div key={hour} className="h-12 text-xs text-gray-500 dark:text-gray-400 text-right pr-1 sm:pr-2 pt-1">
+                <span className="hidden sm:inline">{hour.toString().padStart(2, '0')}:00</span>
+                <span className="sm:hidden">{hour.toString().padStart(2, '0')}</span>
               </div>
             ))}
           </div>
@@ -516,40 +734,72 @@ const Kalender = () => {
           {weekDays.map((day, dayIndex) => (
             <div 
               key={dayIndex} 
-              className="relative space-y-2"
+              className="relative space-y-0"
               onDoubleClick={() => openEventModal(day)}
             >
               {getTimeSlots().map(hour => (
-                <div key={hour} className="h-12 border-t border-gray-200 dark:border-gray-700"></div>
+                <div key={hour} className="h-12 border-t border-gray-200 dark:border-gray-700 relative">
+                  {/* Half-hour markers */}
+                  <div className="absolute top-6 left-0 right-0 border-t border-gray-100 dark:border-gray-600"></div>
+                </div>
               ))}
               
               {/* Events for this day */}
               {weekEvents
-                .filter(event => event.start.toDateString() === day.toDateString())
+                .filter(event => {
+                  const eventDate = new Date(event.start);
+                  const matches = eventDate.toDateString() === day.toDateString();
+                  if (matches) {
+                    console.log('Week view: Event matches day:', event.title, 'date:', eventDate.toDateString(), 'target:', day.toDateString());
+                  }
+                  return matches;
+                })
                 .map(event => {
-                  const startHour = event.start.getHours() + event.start.getMinutes() / 60;
-                  const endHour = event.end.getHours() + event.end.getMinutes() / 60;
-                  const duration = endHour - startHour;
+                  // Calculate exact position based on time
+                  const startTime = new Date(event.start);
+                  const endTime = new Date(event.end);
+                  
+                  // Convert to hours since midnight
+                  const startHour = startTime.getHours() + (startTime.getMinutes() / 60);
+                  const endHour = endTime.getHours() + (endTime.getMinutes() / 60);
+                  const duration = Math.max(endHour - startHour, 0.25); // Minimum 15 minutes
+                  
+                  // Calculate pixel positions (48px per hour)
+                  const topPosition = startHour * 48;
+                  const height = duration * 48;
+                  
+                  console.log('Week view: Positioning event:', event.title, {
+                    startTime: startTime.toLocaleTimeString(),
+                    endTime: endTime.toLocaleTimeString(),
+                    startHour,
+                    endHour,
+                    duration,
+                    topPosition,
+                    height
+                  });
                   
                   return (
                     <motion.div
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}
-                      className="absolute left-0 right-0 mx-1 rounded-md text-xs cursor-pointer overflow-hidden"
+                      className="absolute left-0 right-0 mx-0.5 sm:mx-1 rounded-md text-xs cursor-pointer overflow-hidden shadow-sm z-10"
                       style={{
-                        top: `${startHour * 48}px`,
-                        height: `${duration * 48}px`,
+                        top: `${topPosition}px`,
+                        height: `${height}px`,
                         backgroundColor: `${event.color}20`,
-                        borderLeft: `3px solid ${event.color}`
+                        borderLeft: `3px solid ${event.color}`,
+                        minHeight: '12px' // Minimum height for visibility
                       }}
                       whileHover={{ scale: 1.02 }}
                     >
-                      <div className="p-1">
-                        <div className="font-medium text-gray-900 dark:text-white truncate">
-                          {event.title}
+                      <div className="p-0.5 sm:p-1 h-full flex flex-col justify-between">
+                        <div className="font-medium text-gray-900 dark:text-white truncate text-xs">
+                          <span className="hidden sm:inline">{event.title}</span>
+                          <span className="sm:hidden">{event.title.substring(0, 8)}...</span>
                         </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {formatTime(event.start)}
+                        <div className="text-gray-600 dark:text-gray-400 text-xs">
+                          <span className="hidden sm:inline">{startTime.getHours().toString().padStart(2, '0')}:{startTime.getMinutes().toString().padStart(2, '0')}</span>
+                          <span className="sm:hidden">{startTime.getHours().toString().padStart(2, '0')}</span>
                         </div>
                       </div>
                     </motion.div>
@@ -566,13 +816,13 @@ const Kalender = () => {
     const dayEvents = getEventsForDay(currentDate);
     
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* Day header */}
         <div 
-          className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-colors"
+          className="text-center p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-colors"
           onDoubleClick={() => openEventModal(currentDate)}
         >
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
             {currentDate.toLocaleDateString('de-DE', { 
               weekday: 'long', 
               year: 'numeric', 
@@ -580,41 +830,44 @@ const Kalender = () => {
               day: 'numeric' 
             })}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
             {dayEvents.length} Events geplant
           </p>
           <p className="text-xs text-gray-500 mt-2">Doppelklick zum Event hinzufügen</p>
         </div>
         
         {/* Events list */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3 max-h-[500px] sm:max-h-[600px] overflow-y-auto">
           {dayEvents.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Keine Events für heute</p>
-              <p className="text-sm">Doppelklick auf einen Tag um ein Event hinzuzufügen</p>
+              <p>Keine Events für {currentDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+              <p className="text-sm">Doppelklick auf den Tag um ein Event hinzuzufügen</p>
             </div>
           ) : (
             dayEvents.map(event => (
               <motion.div
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:shadow-lg transition-all"
+                className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:shadow-lg transition-all bg-white dark:bg-gray-800"
                 style={{ borderLeft: `4px solid ${event.color}` }}
                 whileHover={{ scale: 1.02 }}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-3 h-3 rounded-full ${getPriorityColor(event.priority)}`}></div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                      <div className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full ${getPriorityColor(event.priority)}`}></div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
                         {event.title}
                       </h3>
+                      {event.category === 'deepwork' && (
+                        <Brain className="h-3 sm:h-4 w-3 sm:w-4 text-purple-500" />
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {event.description}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         <span>{formatTime(event.start)} - {formatTime(event.end)}</span>
@@ -627,8 +880,8 @@ const Kalender = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {event.tags.map(tag => (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {event.tags && event.tags.map(tag => (
                       <span
                         key={tag}
                         className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full"
@@ -649,24 +902,24 @@ const Kalender = () => {
   const renderAgendaView = () => {
     const agendaEvents = filteredEvents
       .sort((a, b) => new Date(a.start) - new Date(b.start))
-      .slice(0, 20); // Show next 20 events
+      .slice(0, 50); // Show next 50 events
     
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div 
-          className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-colors"
+          className="text-center p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-colors"
           onDoubleClick={() => openEventModal()}
         >
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
             Agenda - Nächste Events
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Übersicht über alle geplanten Events
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+            Übersicht über alle geplanten Events ({agendaEvents.length} Events)
           </p>
           <p className="text-xs text-gray-500 mt-2">Doppelklick zum Event hinzufügen</p>
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3 max-h-[500px] sm:max-h-[600px] overflow-y-auto">
           {agendaEvents.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <List className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -678,28 +931,31 @@ const Kalender = () => {
               <motion.div
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:shadow-lg transition-all"
+                className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:shadow-lg transition-all bg-white dark:bg-gray-800"
                 style={{ borderLeft: `4px solid ${event.color}` }}
                 whileHover={{ scale: 1.02 }}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-3 h-3 rounded-full ${getPriorityColor(event.priority)}`}></div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                      <div className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full ${getPriorityColor(event.priority)}`}></div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
                         {event.title}
                       </h3>
-                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full capitalize">
                         {event.category}
                       </span>
+                      {event.category === 'deepwork' && (
+                        <Brain className="h-3 sm:h-4 w-3 sm:w-4 text-purple-500" />
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {event.description}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        <span>{event.start.toLocaleDateString('de-DE')}</span>
+                        <span>{event.start.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -714,8 +970,8 @@ const Kalender = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-1">
-                      {event.tags.map(tag => (
+                    <div className="flex flex-wrap items-center gap-1">
+                      {event.tags && event.tags.map(tag => (
                         <span
                           key={tag}
                           className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full"
@@ -749,8 +1005,8 @@ const Kalender = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
             {/* Left: Navigation */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -762,7 +1018,7 @@ const Kalender = () => {
               
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => navigateMonth(-1)}
+                  onClick={() => navigateView(-1)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -774,7 +1030,7 @@ const Kalender = () => {
                   Heute
                 </button>
                 <button
-                  onClick={() => navigateMonth(1)}
+                  onClick={() => navigateView(1)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -782,15 +1038,28 @@ const Kalender = () => {
               </div>
               
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {currentDate.toLocaleDateString('de-DE', { 
+                {view === 'month' && currentDate.toLocaleDateString('de-DE', { 
                   month: 'long', 
                   year: 'numeric' 
                 })}
+                {view === 'week' && (() => {
+                  const weekStart = getWeekStart(currentDate);
+                  const weekEnd = new Date(weekStart);
+                  weekEnd.setDate(weekStart.getDate() + 6);
+                  return `${weekStart.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })} - ${weekEnd.toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+                })()}
+                {view === 'day' && currentDate.toLocaleDateString('de-DE', { 
+                  weekday: 'long',
+                  day: 'numeric', 
+                  month: 'long',
+                  year: 'numeric' 
+                })}
+                {view === 'agenda' && 'Agenda - Nächste Events'}
               </h2>
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               {/* View Toggle */}
               <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                 {[
@@ -802,29 +1071,33 @@ const Kalender = () => {
                   <button
                     key={viewOption.key}
                     onClick={() => setView(viewOption.key)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                       view === viewOption.key
                         ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
-                    <viewOption.icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{viewOption.label}</span>
+                    <viewOption.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">{viewOption.label}</span>
                   </button>
                 ))}
               </div>
 
               {/* Search */}
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Events suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
+
+
+
+
 
 
             </div>
@@ -832,25 +1105,66 @@ const Kalender = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Stats */}
       <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
-            {Object.entries(filters).map(([category, enabled]) => (
-              <button
-                key={category}
-                onClick={() => setFilters(prev => ({ ...prev, [category]: !enabled }))}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  enabled
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                {React.createElement(getCategoryIcon(category), { className: "h-4 w-4" })}
-                <span className="capitalize">{category}</span>
-              </button>
-            ))}
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-3">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 lg:gap-0">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full lg:w-auto">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(filters).map(([category, enabled]) => (
+                  <button
+                    key={category}
+                    onClick={() => setFilters(prev => ({ ...prev, [category]: !enabled }))}
+                    className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                      enabled
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {React.createElement(getCategoryIcon(category), { className: "h-3 w-3 sm:h-4 sm:w-4" })}
+                    <span className="capitalize">{category}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Deep Work Stats */}
+            {deepworkStats.totalSessions > 0 && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full lg:w-auto">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Brain className="w-4 h-4 text-purple-500" />
+                  <span className="font-medium">Deep Work:</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+                  <div className="bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full">
+                    <span className="text-purple-700 dark:text-purple-300 font-medium">
+                      {deepworkStats.totalSessions} Sessions
+                    </span>
+                  </div>
+                  <div className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                    <span className="text-green-700 dark:text-green-300 font-medium">
+                      {Math.round(deepworkStats.totalDuration / 60)}h
+                    </span>
+                  </div>
+                  {deepworkStats.averageFocusScore > 0 && (
+                    <div className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded-full">
+                      <span className="text-yellow-700 dark:text-yellow-300 font-medium">
+                        {Math.round(deepworkStats.averageFocusScore)}/100 Fokus
+                      </span>
+                    </div>
+                  )}
+                  {deepworkStats.totalTasksCompleted > 0 && (
+                    <div className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">
+                        {deepworkStats.totalTasksCompleted} Aufgaben
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -882,105 +1196,115 @@ const Kalender = () => {
                 className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="p-2 rounded-lg"
-                      style={{ backgroundColor: `${selectedEvent.color}20` }}
-                    >
-                      {React.createElement(getIconComponent(selectedEvent.icon), { 
-                        className: "h-5 w-5",
-                        style: { color: selectedEvent.color }
-                      })}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {selectedEvent.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {selectedEvent.category}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedEvent(null)}
-                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {selectedEvent.description}
-                  </p>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <span className="text-gray-700 dark:text-gray-300">
-                        {formatTime(selectedEvent.start)} - {formatTime(selectedEvent.end)}
-                      </span>
-                    </div>
-
-                    {selectedEvent.location && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {selectedEvent.location}
-                        </span>
-                      </div>
-                    )}
-
-                    {selectedEvent.attendees.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Users className="h-4 w-4 text-gray-500" />
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {selectedEvent.attendees.join(', ')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedEvent.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedEvent.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full"
+                {/* Show Deep Work details if it's a deep work event */}
+                {selectedEvent.category === 'deepwork' ? (
+                  <DeepWorkEventDetails 
+                    event={selectedEvent} 
+                    onClose={() => setSelectedEvent(null)} 
+                  />
+                ) : (
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: `${selectedEvent.color}20` }}
                         >
-                          #{tag}
-                        </span>
-                      ))}
+                          {React.createElement(getIconComponent(selectedEvent.icon), { 
+                            className: "h-5 w-5",
+                            style: { color: selectedEvent.color }
+                          })}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {selectedEvent.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {selectedEvent.category}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedEvent(null)}
+                        className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </div>
-                  )}
 
-                                     <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                     <button 
-                       onClick={() => {
-                         setSelectedEvent(null);
-                         openEventModal(null, selectedEvent);
-                       }}
-                       className="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                     >
-                       <Edit className="h-4 w-4" />
-                       Bearbeiten
-                     </button>
-                     <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                       <Share2 className="h-4 w-4" />
-                       Teilen
-                     </button>
-                     <button 
-                       onClick={() => {
-                         deleteEvent(selectedEvent.id);
-                       }}
-                       className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                     >
-                       <Trash2 className="h-4 w-4" />
-                       Löschen
-                     </button>
-                   </div>
-                </div>
+                    <div className="space-y-4">
+                      <p className="text-gray-700 dark:text-gray-300">
+                        {selectedEvent.description}
+                      </p>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {formatTime(selectedEvent.start)} - {formatTime(selectedEvent.end)}
+                          </span>
+                        </div>
+
+                        {selectedEvent.location && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="h-4 w-4 text-gray-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {selectedEvent.location}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Users className="h-4 w-4 text-gray-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {selectedEvent.attendees.join(', ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {selectedEvent.tags.map(tag => (
+                            <span
+                              key={tag}
+                              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button 
+                          onClick={() => {
+                            setSelectedEvent(null);
+                            openEventModal(null, selectedEvent);
+                          }}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Bearbeiten
+                        </button>
+                        <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                          <Share2 className="h-4 w-4" />
+                          Teilen
+                        </button>
+                        <button 
+                          onClick={() => {
+                            deleteEvent(selectedEvent.id);
+                          }}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Löschen
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           )}
