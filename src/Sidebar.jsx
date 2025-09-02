@@ -304,6 +304,7 @@ const Sidebar = ({ onClose }) => {
         <NavItem to="/activities" icon={Bell} label="Aktivitäten" onClose={onClose} />
         <NavItem to="/aufgaben" icon={ListTodo} label="Aufgaben" onClose={onClose} />
         <NavItem to="/documents" icon={FileText} label="Dokumente" onClose={onClose} />
+        <NavItem to="/editor-demo" icon={FileText} label="Rich Text Editor" onClose={onClose} />
 
         {/* Section: Workflow */}
         <Section title="Lernen" defaultOpen>
@@ -312,14 +313,6 @@ const Sidebar = ({ onClose }) => {
             <NavItem to="/meine-lern-inhalte" icon={Users} label="Meine Inhalte" onClose={onClose} />
             <NavItem to="/meine-historie" icon={History} label="Meine Historie" onClose={onClose} />
             <NavItem to="/reports" icon={Clock3} label="Grantee Reports" onClose={onClose} />
-          </div>
-        </Section>
-
-        {/* Section: Documents */}
-        <Section title="Documents" defaultOpen>
-          <div className="space-y-1">
-            <NavItem to="/templates" icon={FileCog} label="Document Templates" onClose={onClose} />
-            <NavItem to="/centre" icon={FolderOpen} label="Document Centre" onClose={onClose} />
           </div>
         </Section>
 

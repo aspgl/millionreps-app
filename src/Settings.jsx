@@ -41,6 +41,7 @@ import {
   ChevronDown,
   RefreshCw
 } from "lucide-react";
+import DailyRoutines from "./components/DailyRoutines";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -64,6 +65,7 @@ export default function Settings() {
     target_value: 10,
     period: "weekly"
   });
+  const [showDailyRoutines, setShowDailyRoutines] = useState(false);
 
   // Load user data
   useEffect(() => {
@@ -597,13 +599,22 @@ export default function Settings() {
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2">🎯 Meine Ziele</h2>
                     <p className="text-gray-600 dark:text-dark-text-secondary">Setze dir Ziele und verfolge deinen Fortschritt</p>
                   </div>
-                  <button
-                    onClick={() => setShowNewGoalForm(true)}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium flex items-center gap-2"
-                  >
-                    <Plus className="h-5 w-5" />
-                    Neues Ziel
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => setShowDailyRoutines(true)}
+                      className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all font-medium flex items-center gap-2"
+                    >
+                      <Clock className="h-5 w-5" />
+                      Tagesroutinen
+                    </button>
+                    <button
+                      onClick={() => setShowNewGoalForm(true)}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all font-medium flex items-center gap-2"
+                    >
+                      <Plus className="h-5 w-5" />
+                      Neues Ziel
+                    </button>
+                  </div>
                 </div>
 
                 {/* New Goal Form */}
@@ -996,6 +1007,12 @@ export default function Settings() {
           aspectRatio={1}
         />
       )}
+
+      {/* Daily Routines Modal */}
+      <DailyRoutines
+        isOpen={showDailyRoutines}
+        onClose={() => setShowDailyRoutines(false)}
+      />
     </div>
   );
 }

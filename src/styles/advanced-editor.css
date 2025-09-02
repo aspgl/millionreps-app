@@ -1,0 +1,342 @@
+/* 🚀 ADVANCED RICH TEXT EDITOR STYLES 🚀 */
+
+/* Main Editor Container */
+.advanced-rich-text-editor {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* TipTap Editor Styling */
+.tiptap-editor {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.tiptap-editor.dark {
+  color: #d1d5db;
+}
+
+/* Prose Styling */
+.tiptap-editor .ProseMirror {
+  outline: none;
+  min-height: 600px;
+  padding: 2rem;
+}
+
+/* Headings */
+.tiptap-editor h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 2rem 0 1rem 0;
+  color: #111827;
+}
+
+.tiptap-editor h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.5rem 0 1rem 0;
+  color: #1f2937;
+}
+
+.tiptap-editor h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1.25rem 0 0.75rem 0;
+  color: #374151;
+}
+
+/* Paragraphs */
+.tiptap-editor p {
+  margin: 1rem 0;
+  line-height: 1.7;
+}
+
+/* Lists */
+.tiptap-editor ul,
+.tiptap-editor ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.tiptap-editor li {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+/* Task Lists */
+.tiptap-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin: 0.5rem 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > label {
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+/* Blockquotes */
+.tiptap-editor blockquote {
+  border-left: 4px solid #e5e7eb;
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  background-color: #f9fafb;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.tiptap-editor.dark blockquote {
+  border-left-color: #4b5563;
+  background-color: #1f2937;
+  color: #9ca3af;
+}
+
+/* Code Blocks */
+.tiptap-editor pre {
+  background-color: #1f2937;
+  color: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.tiptap-editor code {
+  background-color: #f3f4f6;
+  color: #dc2626;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.tiptap-editor.dark code {
+  background-color: #374151;
+  color: #fca5a5;
+}
+
+/* Tables */
+.tiptap-editor table {
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tiptap-editor th,
+.tiptap-editor td {
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.tiptap-editor th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.tiptap-editor.dark th,
+.tiptap-editor.dark td {
+  border-color: #4b5563;
+}
+
+.tiptap-editor.dark th {
+  background-color: #1f2937;
+  color: #d1d5db;
+}
+
+/* Links */
+.tiptap-editor a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-decoration-color: #dbeafe;
+  text-underline-offset: 2px;
+}
+
+.tiptap-editor a:hover {
+  color: #1d4ed8;
+  text-decoration-color: #bfdbfe;
+}
+
+/* Images */
+.tiptap-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Text Alignment */
+.tiptap-editor [data-text-align="left"] {
+  text-align: left;
+}
+
+.tiptap-editor [data-text-align="center"] {
+  text-align: center;
+}
+
+.tiptap-editor [data-text-align="right"] {
+  text-align: right;
+}
+
+.tiptap-editor [data-text-align="justify"] {
+  text-align: justify;
+}
+
+/* Placeholder */
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Focus States */
+.tiptap-editor .ProseMirror:focus {
+  outline: none;
+}
+
+/* Selection */
+.tiptap-editor .ProseMirror ::selection {
+  background-color: #dbeafe;
+}
+
+.tiptap-editor.dark .ProseMirror ::selection {
+  background-color: #1e40af;
+}
+
+/* Floating Menus */
+.floating-menu {
+  position: absolute;
+  z-index: 50;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 1rem;
+  min-width: 300px;
+}
+
+.dark .floating-menu {
+  background: #1f2937;
+  border-color: #4b5563;
+}
+
+/* Toolbar Button Hover Effects */
+.toolbar-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.toolbar-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Active State Animations */
+.toolbar-button.active {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tiptap-editor .ProseMirror {
+    padding: 1rem;
+  }
+  
+  .tiptap-editor h1 {
+    font-size: 1.875rem;
+  }
+  
+  .tiptap-editor h2 {
+    font-size: 1.5rem;
+  }
+  
+  .tiptap-editor h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Dark Mode Enhancements */
+.dark .tiptap-editor {
+  color: #d1d5db;
+}
+
+.dark .tiptap-editor h1 {
+  color: #f9fafb;
+}
+
+.dark .tiptap-editor h2 {
+  color: #e5e7eb;
+}
+
+.dark .tiptap-editor h3 {
+  color: #d1d5db;
+}
+
+/* Scrollbar Styling */
+.tiptap-editor ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tiptap-editor ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.tiptap-editor ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.tiptap-editor ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark .tiptap-editor ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark .tiptap-editor ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark .tiptap-editor ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Focus Ring for Accessibility */
+.tiptap-editor .ProseMirror:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Smooth Transitions */
+.tiptap-editor * {
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}

@@ -39,6 +39,7 @@ import { useAuth } from './AuthContext';
 import { CalendarService } from './lib/calendarService';
 import { DeepWorkService } from './lib/deepworkService';
 import DeepWorkEventDetails from './components/DeepWorkEventDetails';
+import DailyRoutineView from './components/DailyRoutineView';
 
 const Kalender = () => {
   const { user } = useAuth();
@@ -816,10 +817,10 @@ const Kalender = () => {
     const dayEvents = getEventsForDay(currentDate);
     
     return (
-      <div className="space-y-3 sm:space-y-4">
+      <div className="p-6">
         {/* Day header */}
         <div 
-          className="text-center p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-colors"
+          className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-colors mb-6"
           onDoubleClick={() => openEventModal(currentDate)}
         >
           <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
@@ -836,65 +837,65 @@ const Kalender = () => {
           <p className="text-xs text-gray-500 mt-2">Doppelklick zum Event hinzufügen</p>
         </div>
         
-        {/* Events list */}
-        <div className="space-y-2 sm:space-y-3 max-h-[500px] sm:max-h-[600px] overflow-y-auto">
-          {dayEvents.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Keine Events für {currentDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-              <p className="text-sm">Doppelklick auf den Tag um ein Event hinzuzufügen</p>
-            </div>
-          ) : (
-            dayEvents.map(event => (
-              <motion.div
-                key={event.id}
-                onClick={() => setSelectedEvent(event)}
-                className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:shadow-lg transition-all bg-white dark:bg-gray-800"
-                style={{ borderLeft: `4px solid ${event.color}` }}
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full ${getPriorityColor(event.priority)}`}></div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
-                        {event.title}
-                      </h3>
-                      {event.category === 'deepwork' && (
-                        <Brain className="h-3 sm:h-4 w-3 sm:w-4 text-purple-500" />
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {event.description}
-                    </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatTime(event.start)} - {formatTime(event.end)}</span>
+        {/* Daily Routine View */}
+        <DailyRoutineView date={currentDate} />
+        
+        {/* Regular Events list */}
+        {dayEvents.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Zusätzliche Termine</h3>
+            <div className="space-y-2 sm:space-y-3">
+              {dayEvents.map(event => (
+                <motion.div
+                  key={event.id}
+                  onClick={() => setSelectedEvent(event)}
+                  className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:shadow-lg transition-all bg-white dark:bg-gray-800"
+                  style={{ borderLeft: `4px solid ${event.color}` }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full ${getPriorityColor(event.priority)}`}></div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
+                          {event.title}
+                        </h3>
+                        {event.category === 'deepwork' && (
+                          <Brain className="h-3 sm:h-4 w-3 sm:w-4 text-purple-500" />
+                        )}
                       </div>
-                      {event.location && (
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {event.description}
+                      </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{event.location}</span>
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTime(event.start)} - {formatTime(event.end)}</span>
                         </div>
-                      )}
+                        {event.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            <span>{event.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {event.tags && event.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {event.tags && event.tags.map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
-        </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
